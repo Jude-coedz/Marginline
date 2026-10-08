@@ -142,11 +142,13 @@
     dom.amount.textContent = String(state.demandB);
     dom.sourceUnits.textContent = String(state.demandB);
     dom.sourceNote.textContent = state.demandB + " units forecast";
-    dom.planned.innerHTML = result.combinedUnits + ' <span>units</span>';
+    dom.planned.innerHTML = (checked ? result.combinedUnits : "—") + ' <span>units</span>';
     dom.mathRetarget.textContent = state.demandB + " units";
     dom.mathTotal.textContent = result.combinedUnits + " units";
-    dom.percentage.textContent = Math.round((result.combinedUnits / AVAILABLE) * 100) + "% of available stock";
-    dom.fill.style.width = (state.stage >= 1 ? Math.min(100, result.combinedUnits / AVAILABLE * 100) : 0) + "%";
+    dom.percentage.textContent = checked
+      ? Math.round((result.combinedUnits / AVAILABLE) * 100) + "% of available stock"
+      : "Awaiting combined check";
+    dom.fill.style.width = (checked ? Math.min(100, result.combinedUnits / AVAILABLE * 100) : 0) + "%";
 
     if (checked) {
       dom.difference.textContent = result.shortage
@@ -244,6 +246,14 @@
     window.setTimeout(function () { if (state.stage === 3) dom.label.textContent = original; }, 2100);
   }
 
+  $("hero-start").addEventListener("click", function (event) {
+    event.preventDefault();
+    if (state.stage === 0) advance();
+    $("experience").scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      block: "start"
+    });
+  });
   dom.primary.addEventListener("click", advance);
   dom.restart.addEventListener("click", reset);
   dom.suggested.addEventListener("click", function () {
