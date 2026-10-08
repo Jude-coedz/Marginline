@@ -1,37 +1,70 @@
 # Marginline
 
-**Cross-workflow commercial preflight for Shopify operations.**
+**A shared commercial preflight for automations that make independently reasonable but collectively unsafe decisions.**
 
-**Live interactive review demo:** https://marginline.vercel.app
+**[Explore the working demo](https://marginline.vercel.app)**
 
-Marginline demonstrates a shared pre-action control plane for an AI campaign planner, n8n, Make and Matrixify-style bulk catalog operations. This is a synthetic, read-only product-engineering proof of concept, not a live Shopify integration.
+This is a focused concept designed to show how product thinking and implementation can complement MyDigital-Metrics' Shopify commerce automations. It is an independent demonstration, not a client system or a claim that the agency lacks comparable controls.
 
-## The 90-second walkthrough
+## The demo
 
-1. Open the [live demo](https://marginline.vercel.app). The original fictional six-action release contains **3 blocked / 2 review / 1 allowed**.
-2. Select either glove campaign. Each 20-unit demand individually fits the 36-unit available-to-promise inventory, but the simultaneous total of 40 units exceeds that stock. Marginline spots the **cross-workflow collision**.
-3. Select the Matrixify contract refresh. A proposed £26 overwrite of a clinic's negotiated £22 price is blocked.
-4. Select the Make campaign to inspect the human-review spending policy, or the oral-care bundle to inspect stale inventory evidence.
-5. Select **Generate safe draft**. The demo revises four inputs and re-evaluates the release. All six now clear the sample policy set.
-6. In **Policy center**, change the merchant's thresholds. Run again and inspect **Decision history**, where JSON reports can be exported.
+Two different workflows plan promotions for the same SKU.
 
-## Why it matters
+- AI campaign planner forecasts **20 units**.
+- n8n retargeting forecasts **20 units**.
+- The fictional merchant has **36 units available to promise**.
 
-Standard condition checks inside individual automations miss conflicting actions proposed by other tools. This proof of concept evaluates a *release of proposed changes*, including overlap-aware shared SKU stock commitments, wholesale contract protection, approval thresholds, margin floors and snapshot freshness.
+Each workflow passes alone. When Marginline evaluates their overlapping demand as **one release**, the shared allocation reaches **40 units**, so the release is held before any external write.
 
-## What this repository contains today
+The viewer can lower retargeting demand to **16 or fewer** and immediately see the preflight result change. The exported JSON decision record contains the actual recomputed figures and explicitly describes the outstanding approval/execution boundary.
 
-- `index.html`: an immediately deployable, dependency-free, responsive and interactive **review edition**, with deterministic browser-side simulation.
-- `vercel.json`: static-site Vercel configuration.
-- `PRODUCT-VALIDATION.md`: competitive framing and technical constraints.
+## User journey
 
-The more extensive **Next.js implementation** (including API routes, TypeScript and tests) exists separately in the ChatGPT deliverable `Marginline_Enhanced_Preflight_Source.zip` and has **not yet been merged into this GitHub repository**. The static edition exists specifically to give the recipient a low-friction clickable experience.
+1. Start the interactive walkthrough, including from the above-fold hero link.
+2. Check both proposals individually.
+3. Combine the proposals into a shared-inventory preflight.
+4. Adjust the second plan and inspect the changed verdict.
+5. Export a machine-readable preflight record, or restart.
 
-## Scope boundaries
+One page, one problem, one causal flow. No generic analytics dashboard, AI chat theater or fake operational connector.
 
-- All merchant data is fictional. No real prices, customers or Shopify connections.
-- This product does not perform writes. An `allow` result is an evaluation, not a commercial transaction approval.
-- A production solution would require authenticated connectors, authoritative data, transactional inventory reservations, live cost data, persistent audit records, role-based approvals and an idempotent execution gate.
-- We cannot claim that a particular agency has not already implemented similar controls.
+## What it proves
 
-Built as a practical product-engineering demonstration.
+- The independently valid actions can produce a failure at the level of a shared merchant invariant.
+- The underlying decision is computed deterministically.
+- A proposed correction changes the decision and the export.
+- A product can be explained with one visually guided scenario rather than a large management console.
+
+## Scope
+
+This is a **synthetic, read-only browser demonstration**. Shopify, Matrixify, n8n and Make are not connected; no inventory is reserved, Shopify products are not edited and no campaigns are published.
+
+A real product must use authenticated connectors, authoritative inventory and contracts, fresh costs, reservation semantics/locking, idempotent execution gates and human approval workflows.
+
+The core collision shown here concerns shared inventory. Margin, wholesale-contract and approval rules are additional potential capabilities, not implemented in this focused review edition.
+
+## Repository map
+
+- `index.html` — single-page demonstration and accessible semantic structure.
+- `styles.css` — responsive editorial design language and state-aware visual system.
+- `demo.js` — guided stage model, deterministic policy evaluation, live remediation and JSON export.
+- `tests/demo.test.cjs` — dependency-free interaction tests.
+- `DESIGN.md` — sources and project-specific art-direction lock.
+- `PRODUCT.md` — intended user job, assumptions, constraints and success criteria.
+- `.github/workflows/verify.yml` — syntax and interaction smoke tests.
+- `.github/workflows/visual-review.yml` — real Chromium/Playwright desktop/mobile captures and end-to-end verification.
+
+## Local preview
+
+```bash
+python3 -m http.server 4173
+# open http://localhost:4173
+node --check demo.js
+node --test tests/demo.test.cjs
+```
+
+No npm install or third-party runtime JavaScript libraries are required. Motion is implemented with browser-native Web Animations and CSS transitions, using `prefers-reduced-motion` as a fallback. Display/body fonts use Google Fonts with local fallbacks.
+
+A more extensive, separate Next.js technical prototype was previously prepared, but **has not been merged**; the live Git repository intentionally contains the simpler, higher-clarity client review edition.
+
+[Design reference / thinking](DESIGN.md) · [Product model](PRODUCT.md) · [Competitive boundaries](PRODUCT-VALIDATION.md)
