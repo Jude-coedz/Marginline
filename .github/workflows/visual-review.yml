@@ -1,0 +1,79 @@
+name: Marginline visual review
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/visual-review.yml
+      - index.html
+      - demo.js
+      - styles.css
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Install Playwright for temporary QA runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start demo server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/marginline-server.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/marginline-server.log
+          exit 1
+      - name: Exercise desktop/mobile and capture visual states
+        run: |
+          mkdir -p visual-artifacts
+          node <<'JS'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:1366,height:768},deviceScaleFactor:1,reducedMotion:'reduce'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+            await page.screenshot({path:'visual-artifacts/01-desktop-entry.png',fullPage:true});
+            await page.locator('#primary-action').click();
+            assert.equal(await page.locator('#decision-status').textContent(),'Both passed');
+            await page.locator('#primary-action').click();
+            assert.equal(await page.locator('#decision-status').textContent(),'Release held');
+            await page.screenshot({path:'visual-artifacts/02-desktop-collision.png',fullPage:true});
+            await page.locator('#primary-action').click();
+            await page.locator('#suggest-fix').click();
+            assert.equal(await page.locator('#decision-status').textContent(),'Ready for review');
+            await page.screenshot({path:'visual-artifacts/03-desktop-cleared.png',fullPage:true});
+            await page.setViewportSize({width:390,height:844});
+            await page.reload({waitUntil:'networkidle'});
+            await page.screenshot({path:'visual-artifacts/04-mobile-cleared.png',fullPage:true});
+            const overflow = await page.evaluate(() => ({
+              scrollWidth:document.documentElement.scrollWidth, viewport:window.innerWidth
+            }));
+            assert.ok(overflow.scrollWidth <= overflow.viewport + 2,
+              'Horizontal overflow: ' + JSON.stringify(overflow));
+            assert.deepEqual(errors,[]);
+            console.log('Browser flow passed. Mobile overflow:',JSON.stringify(overflow));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Save screenshot set
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: marginline-visual-review
+          path: visual-artifacts/
+          retention-days: 3
+          if-no-files-found: warn
