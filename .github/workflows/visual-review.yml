@@ -47,7 +47,7 @@ jobs:
             page.on('pageerror',e=>errors.push(String(e)));
             await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
             await page.screenshot({path:'visual-artifacts/01-desktop-entry.png',fullPage:true});
-            await page.locator('#primary-action').click();
+            await page.locator('#hero-start').click();
             assert.equal(await page.locator('#decision-status').textContent(),'Both passed');
             await page.locator('#primary-action').click();
             assert.equal(await page.locator('#decision-status').textContent(),'Release held');
