@@ -1,102 +1,183 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Marginline — Commercial preflight for commerce automations</title><meta name="description" content="A product demonstration: catch margin, stock, wholesale price and approval conflicts before AI automations act."/>
-<style>
-:root{color-scheme:light;--bg:#f5f7f8;--surface:#fff;--ink:#1a2733;--muted:#768592;--border:#e6ebee;--green:#147d64;--greenbg:#eaf6ef;--dark:#14282b;--red:#bd4d53;--redbg:#fff0f0;--amber:#a96d1d;--amberbg:#fff5e7;--shadow:0 18px 56px #162b3510}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:14px/1.55 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}button,input{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}.sidebar{background:#14282b;color:#f4fbf9;padding:29px 18px 22px;display:flex;flex-direction:column;gap:44px;min-height:100vh;position:sticky;top:0;height:100vh}.brand{display:flex;align-items:center;gap:12px;padding:3px 9px;font-size:19px;font-weight:750;letter-spacing:-.7px}.mark{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:#daf6d9;color:#126a5b;font-size:22px;font-weight:800;transform:rotate(-10deg)}.brand span{font-size:9px;display:block;color:#8ea6a9;letter-spacing:1.7px;font-weight:700;margin-top:-5px}.nav-group{color:#7e9c9c;font-size:10px;letter-spacing:1.9px;font-weight:800;text-transform:uppercase;padding:0 13px;margin-bottom:10px}.nav{display:grid;gap:5px}.nav button{border:0;background:none;color:#a9c0c0;text-align:left;padding:12px 15px;border-radius:11px;font-size:13px;display:flex;align-items:center;gap:12px;transition:background .2s,color .2s,transform .2s}.nav button:hover{background:#284144;color:#fff;transform:translateX(2px)}.nav button.active{background:#2c504b;color:#effff6}.nav .i{width:21px;text-align:center;font-size:18px}.sidebar-bottom{margin-top:auto;padding:16px;background:#1e383b;border:1px solid #325052;border-radius:15px}.sidebar-bottom b{font-size:12px}.sidebar-bottom p{color:#a5babb;font-size:11px;margin:7px 0 0}.main{min-width:0}.topbar{min-height:75px;display:flex;align-items:center;justify-content:space-between;padding:18px clamp(24px,4vw,65px);border-bottom:1px solid #e6ebee;background:#fff}.crumb{font-size:12px;color:#9ba7ae}.crumb b{color:#354c53;font-weight:650}.topright{display:flex;align-items:center;gap:12px}.small-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #dce7e2;background:#f2faf5;color:#447c66;padding:6px 11px;border-radius:90px;font-size:11px;font-weight:650}.dot{width:6px;height:6px;background:#50bd88;border-radius:50%}.avatar{width:31px;height:31px;background:#e9e5db;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#755c3e}.content{max-width:1450px;padding:clamp(24px,4vw,60px) clamp(24px,4vw,65px) 70px;margin:0 auto}.eyebrow{text-transform:uppercase;letter-spacing:2.7px;font-size:10px;font-weight:850;color:#22886c}.intro{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:30px}.intro h1{font-size:clamp(31px,3.6vw,52px);line-height:1.10;letter-spacing:-2.5px;font-weight:710;margin:13px 0;color:#182b2e;max-width:730px}.intro p{margin:13px 0 0;color:#70818b;max-width:680px;font-size:14px;line-height:1.75}.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #e1e7e8;background:#fff;color:#2e4c51;padding:11px 15px;border-radius:12px;font-size:12px;font-weight:740;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .2s,box-shadow .2s,background .2s}.btn:hover{transform:translateY(-2px);box-shadow:0 7px 22px #162b3519}.btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 6px 15px #21826821}.btn.primary:hover{background:#0d6954}.btn:focus-visible,.nav button:focus-visible,.action-row:focus-visible{outline:3px solid #9de0bf;outline-offset:3px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:25px 0 24px}.metric{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 22px;box-shadow:0 8px 22px #20373806;position:relative;overflow:hidden}.metric label{display:block;color:#81919a;font-size:11px;font-weight:660}.metric strong{display:block;font-size:35px;letter-spacing:-1.5px;line-height:1.4;margin-top:9px;color:#26363d}.metric small{color:#9da9af;font-size:11px}.metric .metric-accent{position:absolute;right:19px;top:20px;width:10px;height:10px;border-radius:4px;background:#e4e9e9}.metric.danger strong{color:#b84e53}.metric.danger .metric-accent{background:#f3c6c6}.metric.review strong{color:#ba8128}.metric.review .metric-accent{background:#f3db9f}.metric.allow strong{color:#208a6e}.metric.allow .metric-accent{background:#b8e8d1}.surface{background:#fff;border:1px solid #e5ebed;border-radius:19px;box-shadow:0 8px 24px #1a303709}.surface-head{padding:23px 26px 19px;border-bottom:1px solid #eaf0ef;display:flex;justify-content:space-between;gap:10px;align-items:center}.surface-head h2{font-size:17px;letter-spacing:-.4px;font-weight:730;margin:0}.surface-head p{color:#8998a0;font-size:12px;margin:4px 0 0}.mini{font-size:10px;color:#95a7a8;font-weight:760;letter-spacing:.5px}.workspace{display:grid;grid-template-columns:minmax(0,1.24fr) minmax(295px,.76fr);gap:17px;align-items:start}.batch-list{padding:10px}.action-row{width:100%;display:flex;align-items:center;gap:12px;border:1px solid transparent;text-align:left;background:transparent;border-radius:12px;padding:14px 13px;transition:background .2s,border-color .2s}.action-row:hover{background:#f7faf9}.action-row.selected{background:#f1f8f4;border-color:#d4e7db}.action-num{width:35px;height:35px;border:1px solid #e0e8e7;border-radius:11px;display:grid;place-items:center;color:#66857f;font-weight:760;background:#fff;font-size:11px}.action-main{flex:1;min-width:0}.action-main b{display:block;font-size:12px;font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.action-main span{font-size:10.5px;color:#87969c;display:block;margin-top:2px}.status{font-weight:810;font-size:10px;padding:5px 9px;border-radius:7px;text-transform:uppercase;letter-spacing:.5px}.status.block{background:var(--redbg);color:var(--red)}.status.review{background:var(--amberbg);color:var(--amber)}.status.allow{background:var(--greenbg);color:var(--green)}.detail{padding:23px;position:sticky;top:18px}.detail-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.detail h2{font-size:21px;letter-spacing:-.7px;line-height:1.25;margin:23px 0 8px}.detail p{margin:0;color:#81929b;font-size:12px}.hr{height:1px;background:#edf1f0;margin:23px 0}.detail-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-kpis div{background:#f6f8f8;padding:13px;border-radius:11px}.detail-kpis span{color:#87969b;display:block;font-size:10px}.detail-kpis strong{font-size:19px;letter-spacing:-.5px}.explain{margin-top:12px;display:grid;gap:9px}.rule{background:#f8faf9;border:1px solid #e9eeee;padding:12px 13px;border-radius:11px;color:#53676b;font-size:11px;line-height:1.6}.rule.danger{background:#fff8f7;border-color:#f3dedb;color:#9b5958}.rule.review{background:#fffbf4;border-color:#f3e6ca;color:#8b733d}.rule.allow{background:#f3fbf6;border-color:#e0f0e6;color:#3d7960}.rule b{display:block;font-size:10px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}.note{display:flex;gap:9px;align-items:start;background:#f0f6f6;color:#687f83;padding:14px;border-radius:12px;font-size:11px;margin-top:20px}.section{display:none;animation:fadeUp .4s ease both}.section.show{display:block}@keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.policy{padding:25px}.policy h3{font-size:14px;margin:0}.policy p{font-size:11px;color:#87979f;margin:7px 0 21px}.policy-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.policy-val{font-weight:840;font-size:19px;color:#197863}.policy input[type=range]{width:100%;accent-color:#18896d;cursor:pointer}.policy-footer{display:flex;justify-content:space-between;color:#9eacad;font-size:10px;margin-top:8px}.toggle{appearance:none;width:42px;height:24px;border-radius:40px;background:#c2d0cf;position:relative;transition:background .2s;cursor:pointer}.toggle:checked{background:#188668}.toggle:before{content:"";position:absolute;width:17px;height:17px;background:#fff;border-radius:50%;top:3.5px;left:4px;transition:transform .2s}.toggle:checked:before{transform:translateX(17px)}.insight{padding:24px;background:#183436;color:#f2faf4;border-radius:18px;margin-bottom:22px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:25px}.insight h3{font-size:18px;margin:0 0 4px;letter-spacing:-.4px}.insight p{margin:0;color:#b2c9c5;font-size:12px;line-height:1.7;max-width:690px}.insight .btn{background:#d7f7d9;color:#1c6450;border:0}.audit-list{padding:8px 25px}.audit-row{padding:17px 2px;border-bottom:1px solid #edf1f1;display:flex;justify-content:space-between;gap:16px;align-items:center}.audit-row:last-child{border:0}.audit-row b{font-size:12px}.audit-row small{display:block;color:#9caaaf;margin-top:3px;font-size:10px}.empty{text-align:center;padding:60px 20px;color:#91a1a7}.flow{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;padding:30px 24px}.flow-card{flex:1;min-width:165px;border:1px solid #e2e9ea;border-radius:15px;padding:22px;background:#fdfefe}.flow-card strong{display:block;font-size:14px;margin-bottom:10px}.flow-card small{display:block;font-size:11px;color:#8999a0;line-height:1.8}.flow-card.highlight{background:#eef9f3;border-color:#bde5d0}.source-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.source-list span{border:1px solid #dce9e6;padding:5px 9px;border-radius:8px;font-size:10px;background:#fff}.prose{color:#778890;font-size:12px;line-height:1.8}.footer{margin-top:30px;display:flex;justify-content:space-between;gap:15px;font-size:10.5px;color:#a3b0b5}.flash{position:fixed;right:24px;bottom:24px;z-index:5;color:#fff;background:#163834;padding:12px 18px;border-radius:13px;box-shadow:var(--shadow);font-size:12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.25s}.flash.show{opacity:1;transform:translateY(0)}@media(max-width:1110px){.workspace{grid-template-columns:1fr}.detail{position:static}.intro{align-items:start;flex-direction:column}.metric-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.app{display:block}.sidebar{position:relative;height:auto;min-height:0;padding:14px;gap:12px}.brand{font-size:16px}.sidebar-bottom,.nav-group{display:none}.nav{display:flex;overflow:auto;gap:4px}.nav button{white-space:nowrap;padding:9px 10px}.nav .i{display:none}.topbar{padding:13px 17px;min-height:52px}.topright .small-pill{display:none}.content{padding:22px 15px 45px}.intro h1{font-size:32px;letter-spacing:-1.4px}.metric-grid{gap:10px}.metric{padding:15px}.metric strong{font-size:29px}.surface-head{padding:17px}.panel-grid{grid-template-columns:1fr}.action-row{padding:12px 8px}.action-main b{font-size:11px}.detail{padding:18px}.insight{grid-template-columns:1fr}.footer{flex-direction:column}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-</style></head>
-<body><div class="app">
-<aside class="sidebar"><div class="brand"><div class="mark">∿</div><div>marginline<span>COMMERCE INTELLIGENCE</span></div></div>
-<div><div class="nav-group">Workspace</div><nav class="nav" aria-label="Product sections">
-<button data-view="preflight" class="active"><span class="i">▦</span> Batch preflight</button><button data-view="policies"><span class="i">◉</span> Policy center</button><button data-view="activity"><span class="i">◷</span> Decision history</button><button data-view="integrations"><span class="i">⌘</span> Integration map</button>
-</nav></div><div class="sidebar-bottom"><b>Designed for real-world constraints</b><p>A read-only demo for MyDigital-Metrics. Synthetic merchant data. Zero Shopify writes.</p></div></aside>
-<main class="main"><header class="topbar"><div class="crumb">Commerce intelligence <span style="color:#d2d7d8;padding:0 8px">/</span> <b id="crumb">Batch preflight</b></div><div class="topright"><div class="small-pill"><span class="dot"></span> Synthetic sandbox</div><div class="avatar">ML</div></div></header><div class="content">
-<section class="section show" id="view-preflight"><div class="intro"><div><div class="eyebrow">01 / RELEASE INTELLIGENCE</div><h1>Good automations.<br/>Bad decisions. <span style="color:#268668">Caught.</span></h1><p>Six changes. Four independent workflows. One shared commercial reality. Run a preflight to expose conflicts that no individual automation can see.</p></div><div class="actions"><button class="btn" id="reset">↶ Restore batch</button><button class="btn primary" id="run">▶ Run preflight</button></div></div>
-<div class="insight"><div><h3>Try the collision that looks safe in isolation.</h3><p>Two 20-unit promotions for the same glove SKU each clear their individual stock check. Together, overlapping demand exceeds the 36 units available to promise.</p></div><button class="btn" id="remediate">✦ Generate safe draft</button></div>
-<div class="metric-grid"><article class="metric"><div class="metric-accent"></div><label>Proposed actions</label><strong id="m-total">06</strong><small>Across independent workflows</small></article><article class="metric danger"><div class="metric-accent"></div><label>Blocked</label><strong id="m-block">03</strong><small>Commercial rule violations</small></article><article class="metric review"><div class="metric-accent"></div><label>Need review</label><strong id="m-review">02</strong><small>Approval or stale evidence</small></article><article class="metric allow"><div class="metric-accent"></div><label>Clear to proceed</label><strong id="m-allow">01</strong><small>Not executed by this demo</small></article></div>
-<div class="workspace"><div class="surface"><div class="surface-head"><div><h2>Proposed release</h2><p id="release-head">Inspect individual decisions and the release-level conflicts.</p></div><div class="mini" id="batch-id">BATCH / 001</div></div><div class="batch-list" id="batch-list"></div></div><aside class="surface detail" id="detail-panel" aria-live="polite"></aside></div>
-<div class="footer"><span>Built as a product-engineering demonstration, not an operational Shopify integration.</span><span>Marginline / demo edition</span></div></section>
-<section class="section" id="view-policies"><div class="intro"><div><div class="eyebrow">02 / GOVERNANCE</div><h1>Rules that travel<br/>with every workflow.</h1><p>Change the merchant's operating constraints and rerun the very same batch. These controls affect the actual evaluation, not just the UI.</p></div><button class="btn primary" id="to-preflight">Run with these policies ↗</button></div><div class="panel-grid">
-<div class="surface policy"><div class="policy-top"><h3>Minimum gross margin</h3><span class="policy-val" id="v-margin">25%</span></div><p>Block proposed promotions that price below the protected margin floor.</p><input id="p-margin" type="range" min="10" max="50" step="1" value="25"><div class="policy-footer"><span>10%</span><span>50%</span></div></div>
-<div class="surface policy"><div class="policy-top"><h3>Safety inventory buffer</h3><span class="policy-val" id="v-buffer">10 units</span></div><p>Hold back a stock reserve in addition to wholesale commitments.</p><input id="p-buffer" type="range" min="0" max="30" step="1" value="10"><div class="policy-footer"><span>0 units</span><span>30 units</span></div></div>
-<div class="surface policy"><div class="policy-top"><h3>Daily spend approval</h3><span class="policy-val" id="v-spend">£500</span></div><p>Route automated spend requests above this limit to a human approver.</p><input id="p-spend" type="range" min="200" max="1000" step="50" value="500"><div class="policy-footer"><span>£200</span><span>£1,000</span></div></div>
-<div class="surface policy"><div class="policy-top"><h3>Snapshot freshness</h3><span class="policy-val" id="v-freshness">15 min</span></div><p>Do not rely on inventory or contract evidence older than this window.</p><input id="p-freshness" type="range" min="5" max="60" step="5" value="15"><div class="policy-footer"><span>5 min</span><span>60 min</span></div></div>
-<div class="surface policy"><div class="policy-top"><h3>Protect wholesale agreements</h3><input type="checkbox" class="toggle" id="p-protectB2B" checked aria-label="Protect wholesale agreements"></div><p>Block catalog changes that overwrite negotiated B2B pricing without an authorized contract update.</p><div class="small-pill"><span class="dot"></span> Strict protection enabled by default</div></div>
-<div class="surface policy" style="background:#f2f8f5"><h3>Commercial controls, not platform-specific rules</h3><p style="margin-bottom:0">The same guardrail logic evaluates an AI campaign, an n8n workflow, a Make sequence or a Matrixify catalog sync. This is the product hypothesis: decisions must share constraints even when tools do not share state.</p></div>
-</div></section>
-<section class="section" id="view-activity"><div class="intro"><div><div class="eyebrow">03 / EVIDENCE</div><h1>Every decision<br/>has a reason.</h1><p>Session history for executed preflight checks. Each record includes the evaluated commercial controls and the complete proposal snapshot.</p></div><button class="btn" id="export">↓ Export last evaluation</button></div><div class="surface"><div class="surface-head"><h2>Decision history</h2><span class="mini">SIMULATED / NO LIVE WRITES</span></div><div class="audit-list" id="audit-list"><div class="empty">Run a preflight to see the first decision record.</div></div></div></section>
-<section class="section" id="view-integrations"><div class="intro"><div><div class="eyebrow">04 / ARCHITECTURE</div><h1>One control plane.<br/>Every automation.</h1><p>This is where Marginline fits into an existing commerce stack, as a shared pre-execution checkpoint rather than another disconnected workflow.</p></div></div>
-<div class="surface"><div class="surface-head"><h2>Proposed integration boundary</h2><span class="mini">REFERENCE DESIGN</span></div><div class="flow"><div class="flow-card"><strong>01 · Planned changes</strong><small>AI planner, n8n, Make, Matrixify import jobs</small><div class="source-list"><span>AI</span><span>n8n</span><span>Make</span><span>Matrixify</span></div></div><div class="flow-card"><strong>02 · Merchant context</strong><small>Authoritative inventory, costs, B2B agreements, approval policy, freshness timestamps</small></div><div class="flow-card highlight"><strong>03 · Marginline preflight</strong><small>Evaluate isolated checks and release-level collisions. Return allow, review or block with evidence.</small></div><div class="flow-card"><strong>04 · Execution gate</strong><small>Calling workflow handles approvals, reservations and Shopify writes only after a validated allow response.</small></div></div></div>
-<div class="surface" style="margin-top:17px;padding:25px"><h2 style="margin:0 0 8px;font-size:16px">What a production implementation still needs</h2><p class="prose" style="margin:0">Authenticated integrations, cost-of-goods accuracy, inventory reservation and transactional locking, idempotent approval gates, durable audit records, role-based access control and exception handling. This demo intentionally performs none of those writes.</p></div></section>
-</div></main></div><div class="flash" id="flash" role="status"></div>
-<script>
-function analyze(changes,policies){
-  const rows=changes.map(c=>{
-    const available=Math.max(0,c.onHand-c.reserved-policies.buffer);
-    const effective=c.price*(1-c.discount/100);
-    const margin=effective>0?((effective-c.cost)/effective)*100:0;
-    const flags=[];
-    if(c.kind==="campaign" && margin<policies.margin)flags.push({tone:"block",text:"Projected gross margin "+margin.toFixed(1)+"% is below the "+policies.margin+"% floor."});
-    if(c.kind==="campaign" && c.units>available)flags.push({tone:"block",text:"Proposed demand "+c.units+" exceeds "+available+" units available to promise."});
-    if(c.kind==="price" && policies.protectB2B && c.newPrice!==c.contractPrice)flags.push({tone:"block",text:"Wholesale contract price £"+c.contractPrice+" must be preserved; proposed £"+c.newPrice+"."});
-    if(c.spend>policies.spend)flags.push({tone:"review",text:"Daily spend £"+c.spend+" exceeds the £"+policies.spend+" approval threshold."});
-    if(c.age>policies.freshness)flags.push({tone:"review",text:"Source snapshot is "+c.age+" minutes old; freshness limit is "+policies.freshness+" minutes."});
-    return {change:c,available,margin,flags};
-  });
-  const bySku={};
-  rows.forEach(r=>{if(r.change.kind==="campaign"){(bySku[r.change.sku]||(bySku[r.change.sku]=[])).push(r);}});
-  Object.keys(bySku).forEach(sku=>{
-    const group=bySku[sku];
-    if(group.length<2)return;
-    const valid=group.every(r=>r.change.start && r.change.end && Date.parse(r.change.start)<Date.parse(r.change.end));
-    if(!valid){group.forEach(r=>r.flags.push({tone:"review",text:"Cannot establish overlapping campaign windows; review inventory allocations."}));return;}
-    const events=[];
-    group.forEach(r=>{events.push({at:Date.parse(r.change.start),delta:r.change.units});events.push({at:Date.parse(r.change.end),delta:-r.change.units});});
-    events.sort((a,b)=>a.at-b.at||a.delta-b.delta);
-    let sum=0,peak=0;
-    events.forEach(e=>{sum+=e.delta;peak=Math.max(peak,sum);});
-    const available=Math.min(...group.map(r=>r.available));
-    if(peak>available)group.forEach(r=>r.flags.push({tone:"block",text:"CROSS-WORKFLOW COLLISION: "+peak+" units scheduled in overlapping windows; only "+available+" available. Each proposal passes alone."}));
-    if(new Set(group.map(r=>r.change.onHand+"|"+r.change.reserved)).size>1)group.forEach(r=>r.flags.push({tone:"review",text:"Workflows are using inconsistent inventory snapshots."}));
-  });
-  const ids=new Set();
-  rows.forEach(r=>{if(ids.has(r.change.id))r.flags.push({tone:"block",text:"Duplicate action identifier; prevent replay."});ids.add(r.change.id);
-    r.verdict=r.flags.some(f=>f.tone==="block")?"block":r.flags.length?"review":"allow";
-  });
-  const counts={allow:rows.filter(r=>r.verdict==="allow").length,review:rows.filter(r=>r.verdict==="review").length,block:rows.filter(r=>r.verdict==="block").length};
-  return {rows,counts,verdict:counts.block?"block":counts.review?"review":"allow"};
-}
-const base=[{"id":"PROMO-101","kind":"campaign","source":"AI campaign planner","title":"Weekend clinic starter offer","sku":"GLV-NTR-100","product":"Nitrile examination gloves","price":29,"cost":20,"onHand":96,"reserved":50,"contractPrice":22,"discount":5,"units":20,"spend":240,"age":2,"start":"2026-10-10T09:00:00Z","end":"2026-10-12T09:00:00Z"},{"id":"PROMO-102","kind":"campaign","source":"n8n retargeting","title":"Same-SKU retargeting offer","sku":"GLV-NTR-100","product":"Nitrile examination gloves","price":29,"cost":20,"onHand":96,"reserved":50,"contractPrice":22,"discount":5,"units":20,"spend":170,"age":3,"start":"2026-10-11T09:00:00Z","end":"2026-10-13T09:00:00Z"},{"id":"PRICE-201","kind":"price","source":"Matrixify catalog sync","title":"Riverside clinic contract refresh","sku":"GLV-NTR-100","product":"Wholesale pricing agreement","price":29,"cost":20,"onHand":96,"reserved":50,"contractPrice":22,"newPrice":26,"discount":0,"units":0,"spend":0,"age":2},{"id":"PROMO-301","kind":"campaign","source":"AI campaign planner","title":"Dental tray replenishment","sku":"TRAY-DEN-200","product":"Reusable dental trays","price":58,"cost":29,"onHand":120,"reserved":20,"contractPrice":45,"discount":5,"units":14,"spend":210,"age":4},{"id":"PROMO-401","kind":"campaign","source":"Make campaign workflow","title":"Filter mask restock awareness","sku":"MASK-FLTR-050","product":"Protective filter masks","price":42,"cost":22,"onHand":160,"reserved":45,"contractPrice":34,"discount":5,"units":18,"spend":680,"age":3},{"id":"PROMO-501","kind":"campaign","source":"AI campaign planner","title":"Oral-care bundle trial","sku":"BNDL-ORAL-6","product":"Oral-care starter bundle","price":48,"cost":24,"onHand":90,"reserved":25,"contractPrice":37,"discount":5,"units":15,"spend":180,"age":42}];
-const defaultPolicy={"margin":25,"buffer":10,"spend":500,"freshness":15,"protectB2B":true};
-let policies=JSON.parse(JSON.stringify(defaultPolicy));
-let changes=JSON.parse(JSON.stringify(base));
-let result=analyze(changes,policies);
-let selected=0;let log=[];let seq=0;
-const $=id=>document.getElementById(id);
-const fmt=n=>String(n).padStart(2,'0');
-const escapeHtml=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-function toast(msg){$('flash').textContent=msg;$('flash').classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>$('flash').classList.remove('show'),2600);}
-function badge(status){return '<span class="status '+status+'">'+(status==='allow'?'Allowed':status==='review'?'Review':'Blocked')+'</span>';}
-function draw(){
-  result=analyze(changes,policies);
-  $('m-total').textContent=fmt(changes.length);$('m-block').textContent=fmt(result.counts.block);$('m-review').textContent=fmt(result.counts.review);$('m-allow').textContent=fmt(result.counts.allow);
-  $('batch-list').innerHTML=result.rows.map((r,i)=>'<button class="action-row '+(i===selected?'selected':'')+'" data-row="'+i+'"><span class="action-num">'+fmt(i+1)+'</span><span class="action-main"><b>'+escapeHtml(r.change.title)+'</b><span>'+escapeHtml(r.change.source)+' &nbsp;·&nbsp; '+escapeHtml(r.change.id)+'</span></span>'+badge(r.verdict)+'</button>').join('');
-  document.querySelectorAll('[data-row]').forEach(e=>e.addEventListener('click',()=>{selected=Number(e.dataset.row);draw();}));
-  const r=result.rows[selected]||result.rows[0],c=r.change;
-  const f=r.flags.length?r.flags.map(x=>'<div class="rule '+(x.tone==='block'?'danger':'review')+'"><b>'+(x.tone==='block'?'Rule violated':'Needs attention')+'</b>'+escapeHtml(x.text)+'</div>').join(''):'<div class="rule allow"><b>All evaluated policies cleared</b>No breach found for this individual action within the available snapshot.</div>';
-  $('detail-panel').innerHTML='<div class="detail-top"><span class="eyebrow">ACTION / '+escapeHtml(c.id)+'</span>'+badge(r.verdict)+'</div><h2>'+escapeHtml(c.title)+'</h2><p>'+escapeHtml(c.source)+' · '+escapeHtml(c.sku)+'</p><div class="hr"></div><div class="detail-kpis"><div><span>Available to promise</span><strong>'+r.available+' units</strong></div><div><span>Proposed demand</span><strong>'+c.units+' units</strong></div><div><span>Expected margin</span><strong>'+r.margin.toFixed(1)+'%</strong></div><div><span>Snapshot age</span><strong>'+c.age+' min</strong></div></div><div class="hr"></div><div class="mini">DECISION EVIDENCE</div><div class="explain">'+f+'</div><div class="note"><span>ⓘ</span><span>Preflight does not write to Shopify. An allowed result only informs the calling workflow that this simulated policy set has cleared.</span></div>';
-}
-function performRun(){draw();log.unshift({id:'ML-'+Date.now(),at:new Date().toISOString(),counts:{...result.counts},verdict:result.verdict,policies:{...policies},changes:JSON.parse(JSON.stringify(changes)),evidence:JSON.parse(JSON.stringify(result.rows))});seq++;$('batch-id').textContent='RUN / '+fmt(seq);renderLog();toast('Evaluation complete · '+result.counts.block+' blocked, '+result.counts.review+' review');}
-function renderLog(){$('audit-list').innerHTML=log.length?log.map((x,i)=>'<div class="audit-row"><div><b>Preflight '+fmt(log.length-i)+' · '+(x.verdict==='allow'?'Ready to proceed':'Held for review')+'</b><small>'+new Date(x.at).toLocaleString()+' · '+x.changes.length+' actions · No external execution</small></div><div style="display:flex;gap:8px;align-items:center">'+badge(x.verdict)+'<button class="btn" data-export="'+i+'">Export JSON</button></div></div>').join(''):'<div class="empty">Run a preflight to see the first decision record.</div>';document.querySelectorAll('[data-export]').forEach(e=>e.addEventListener('click',()=>download(log[Number(e.dataset.export)])));}
-function download(d){if(!d)return toast('Run an evaluation first');const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='marginline-preflight-'+d.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),500);toast('Export prepared');}
-function show(view){document.querySelectorAll('.section').forEach(e=>e.classList.toggle('show',e.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===view));$('crumb').textContent={preflight:'Batch preflight',policies:'Policy center',activity:'Decision history',integrations:'Integration map'}[view]||view;window.scrollTo({top:0,behavior:'smooth'});}
-document.querySelectorAll('[data-view]').forEach(e=>e.addEventListener('click',()=>show(e.dataset.view)));
-$('run').addEventListener('click',performRun);
-$('reset').addEventListener('click',()=>{changes=JSON.parse(JSON.stringify(base));selected=0;draw();toast('Original proposed release restored');});
-$('remediate').addEventListener('click',()=>{changes=changes.map(c=>{const x={...c};if(x.id==='PROMO-102')x.units=12;if(x.id==='PRICE-201')x.newPrice=22;if(x.id==='PROMO-401')x.spend=450;if(x.id==='PROMO-501')x.age=2;return x;});draw();performRun();toast('Safer draft generated and re-evaluated');});
-$('to-preflight').addEventListener('click',()=>{show('preflight');performRun();});
-['margin','buffer','spend','freshness'].forEach(key=>{const input=$('p-'+key);input.addEventListener('input',()=>{policies[key]=Number(input.value);$('v-'+key).textContent=(key==='margin'?input.value+'%':key==='buffer'?input.value+' units':key==='spend'?'£'+input.value:input.value+' min');draw();});});
-$('p-protectB2B').addEventListener('change',e=>{policies.protectB2B=e.target.checked;draw();});
-$('export').addEventListener('click',()=>download(log[0]));
-draw();
-</script></body></html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f3">
+  <meta name="description" content="An interactive look at how commercial preflight catches risky decisions across automation workflows before they reach Shopify.">
+  <meta property="og:title" content="Marginline — Check the decision, not just the workflow.">
+  <meta property="og:description" content="Two individually safe automations. One unsafe outcome. See the collision before it happens.">
+  <title>Marginline — Commercial preflight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/demo.js" defer></script>
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Marginline home">
+        <span class="brand-sign" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5 23V9l10 14 10-14v14" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="6" r="2" fill="currentColor"/></svg></span>
+        <span class="brand-name">marginline<span class="brand-period">.</span></span>
+      </a>
+      <div class="header-right">
+        <span class="header-caption"><span class="live-dot"></span> An independent concept for MyDigital-Metrics</span>
+        <a href="#experience" class="header-link">Explore the concept <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-left">
+          <div class="overline"><span class="slash">/</span> THE COMMERCE DECISION LAYER <span class="edition">— A WORKING CONCEPT</span></div>
+          <h1 id="hero-title">Every workflow <em>passed.</em><br>The release still failed.</h1>
+        </div>
+        <div class="hero-right">
+          <p>When automations make decisions independently, who checks what happens <strong>when they act together?</strong></p>
+          <a class="text-jump" href="#experience">See it happen <span aria-hidden="true">↘</span></a>
+        </div>
+      </section>
+
+      <section class="experience wrap" id="experience" aria-label="Interactive commercial preflight demonstration">
+        <div class="scenario-context">
+          <div class="scenario-context-left"><span class="context-marker"></span><span>SCENARIO 001</span><span class="context-separator">/</span><span>THE INVISIBLE COLLISION</span></div>
+          <div class="scenario-context-right">Fictional Shopify merchant <span class="context-separator">·</span> Click through, no setup required</div>
+        </div>
+
+        <div class="instrument" id="instrument" data-stage="0" aria-live="off">
+          <div class="instrument-header">
+            <div class="instrument-identity">
+              <span class="instrument-glyph" aria-hidden="true">◈</span>
+              <span>Release preflight</span>
+              <span class="instrument-id">ML / 001</span>
+            </div>
+            <div class="instrument-header-right"><span class="session-dot"></span>DEMO ENVIRONMENT <span class="divider-mark">/</span> NO LIVE WRITES</div>
+          </div>
+
+          <div class="instrument-intro">
+            <div class="stage-index"><span id="step-index">01</span><span class="stage-index-div">/</span><span>04</span></div>
+            <div>
+              <div class="scene-kicker" id="scene-kicker">THE SETUP</div>
+              <h2 id="scene-heading">One product.<br>Two good intentions.</h2>
+              <p id="scene-description">A campaign planner and a retargeting workflow each want to promote the same product. They never check each other's plans.</p>
+            </div>
+          </div>
+
+          <div class="visual-space" id="visual-space">
+            <div class="visual-labels">
+              <span>01&nbsp; / &nbsp;PROPOSED ACTIONS</span>
+              <span>02&nbsp; / &nbsp;SHARED REALITY</span>
+              <span>03&nbsp; / &nbsp;DECISION</span>
+            </div>
+
+            <div class="pipeline">
+              <section class="sources" aria-label="Two proposed automations">
+                <div class="source-row source-one" id="source-one">
+                  <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M5 10.5 14.5 5l10 5.5v9L15 25l-10-5.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 10.5 15 16l9.5-5.5M15 16v9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                  <div class="source-copy"><span>AI CAMPAIGN PLANNER</span><strong>Weekend promotion</strong><small id="source-a-note">20 units forecast</small></div>
+                  <div class="source-end"><strong>20</strong><span>units</span><div class="mini-pass" aria-label="Check status"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></div></div>
+                </div>
+                <div class="source-row source-two" id="source-two">
+                  <div class="source-icon" aria-hidden="true"><svg viewBox="0 0 30 30"><circle cx="8" cy="8" r="3" stroke="currentColor" fill="none" stroke-width="1.6"/><circle cx="22" cy="13" r="3" stroke="currentColor" fill="none" stroke-width="1.6"/><circle cx="8" cy="22" r="3" stroke="currentColor" fill="none" stroke-width="1.6"/><path d="m10.4 9.7 9.1 2.4M10.5 20l9-5.8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                  <div class="source-copy"><span>N8N RETARGETING</span><strong>Abandoned cart offer</strong><small id="source-b-note">20 units forecast</small></div>
+                  <div class="source-end"><strong id="source-b-units">20</strong><span>units</span><div class="mini-pass" aria-label="Check status"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></div></div>
+                </div>
+              </section>
+
+              <div class="connection" aria-hidden="true">
+                <svg class="connection-svg" viewBox="0 0 140 235" preserveAspectRatio="none">
+                  <path class="connection-track" d="M2 59H44Q74 59 74 115H138"/>
+                  <path class="connection-track" d="M2 176H44Q74 176 74 115H138"/>
+                  <path id="connection-top" class="connection-flow" d="M2 59H44Q74 59 74 115H138"/>
+                  <path id="connection-bottom" class="connection-flow" d="M2 176H44Q74 176 74 115H138"/>
+                </svg>
+                <div class="junction"><span></span></div>
+              </div>
+
+              <section class="inventory" aria-label="Shared inventory and allocation">
+                <div class="inventory-top"><span class="sku-label">SHOPIFY / SHARED INVENTORY</span><span class="sku-id">NG-100</span></div>
+                <div class="product-ident">
+                  <div class="product-icon" aria-hidden="true"><svg viewBox="0 0 55 55" fill="none"><rect x="10" y="13" width="35" height="31" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M17 22h21M17 28h21M17 34h12" stroke="currentColor" stroke-width="1.5"/><path d="M19 13V8h17v5" stroke="currentColor" stroke-width="1.8"/></svg></div>
+                  <div><strong>Nitrile exam gloves</strong><small>Box of 100 <span>·</span> Dental supplies</small></div>
+                </div>
+                <div class="inventory-values">
+                  <div><small>Available to promise</small><strong>36 <span>units</span></strong></div>
+                  <div class="planned-total"><small>Planned demand</small><strong id="planned-number">40 <span>units</span></strong></div>
+                </div>
+                <div class="capacity">
+                  <div class="capacity-top"><span>INVENTORY ALLOCATION</span><span id="capacity-percent">111% of available stock</span></div>
+                  <div class="capacity-track" aria-label="Allocated stock">
+                    <div id="capacity-fill" class="capacity-fill"></div><span class="capacity-threshold"></span>
+                  </div>
+                  <div class="capacity-foot"><span>0</span><span>36 available</span></div>
+                </div>
+                <div class="capacity-difference" id="capacity-difference">4 units oversubscribed</div>
+              </section>
+
+              <div class="connection-single" aria-hidden="true"><span></span></div>
+
+              <section class="decision" id="decision" aria-label="Preflight outcome">
+                <span class="decision-kicker">PRE-EXECUTION STATUS</span>
+                <div class="decision-symbol" id="decision-symbol" aria-hidden="true">
+                  <svg class="icon-pending" viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="24" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 5"/><path d="M30 18v13l8 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  <svg class="icon-blocked" viewBox="0 0 60 60" fill="none"><path d="m30 6 24 42H6L30 6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M30 21v13m0 7v1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                  <svg class="icon-allowed" viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="23" stroke="currentColor" stroke-width="1.8"/><path d="m19 30 8 8 15-17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="decision-status" id="decision-status">Not checked</div>
+                <p id="decision-copy">Check the release before any automation acts.</p>
+              </section>
+            </div>
+          </div>
+
+          <div class="instrument-footer">
+            <div class="instrument-footer-meta" id="footer-explanation"><span class="explanation-dot"></span><span>Every planned action has its own workflow. The inventory does not.</span></div>
+            <div class="step-dots" aria-label="Demo progress"><span class="step-dot active"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span></div>
+          </div>
+        </div>
+
+        <div class="demo-controls">
+          <div class="control-message">
+            <span class="control-overline" id="control-overline">A TWO-MINUTE WALKTHROUGH</span>
+            <p id="control-message">No setup. No forms. One problem you can watch unfold.</p>
+            <div id="fix-panel" class="fix-panel" hidden>
+              <label for="second-demand">Adjust retargeting demand <strong><span id="fix-amount">20</span> units</strong></label>
+              <input id="second-demand" type="range" min="0" max="36" step="1" value="20" aria-label="Retargeting campaign forecast units">
+              <div class="fix-hint" id="fix-hint">Reduce this campaign to 16 units or fewer.</div>
+              <button class="inline-fix" type="button" id="suggest-fix">Use suggested allocation → 16 units</button>
+            </div>
+          </div>
+          <div class="control-actions">
+            <button type="button" id="restart" class="secondary-action" hidden><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M15 6a7 7 0 1 0 1 6M15 2v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Restart</button>
+            <button type="button" id="primary-action" class="primary-action"><span id="primary-label">Start the walkthrough</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+
+        <div class="proofbar" aria-live="polite">
+          <div class="proofbar-left"><span class="proofbar-asterisk">✳</span><span id="proofbar-copy">This is the kind of error individual workflow checks cannot see.</span></div>
+          <button class="proofbar-link" type="button" id="evidence-toggle" aria-expanded="false" aria-controls="evidence">Show the math <span aria-hidden="true" id="math-arrow">↗</span></button>
+        </div>
+        <div id="evidence" class="evidence" hidden>
+          <div class="evidence-inner"><div class="evidence-title">What Marginline actually evaluates</div>
+            <div class="evidence-equation"><span>Campaign planner <b>20 units</b></span><span class="math-plus">+</span><span>Retargeting <b id="math-retargeting">20 units</b></span><span class="math-plus">=</span><span>Combined <b id="math-total">40 units</b></span><span class="math-versus">vs.</span><span>Available <b>36 units</b></span></div>
+            <p id="math-conclusion">Individually, 20 ≤ 36. Combined, 40 > 36. The entire release must be held until the conflict is resolved.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="meaning wrap" aria-labelledby="meaning-title">
+        <div class="meaning-label">THE THINKING BEHIND IT <span aria-hidden="true">↘</span></div>
+        <div class="meaning-main"><h2 id="meaning-title">You don't need another automation.<br>You need a <em>shared point of judgment.</em></h2>
+          <div class="meaning-grid"><p>Shopify Flow, n8n, Make and catalog imports can each follow their own rules. But independently sensible changes can produce a commercially unsafe combined outcome.</p><p>Marginline's proposed role is simple: evaluate the <strong>whole planned release</strong> against live merchant constraints before approved workflows proceed.</p></div>
+        </div>
+      </section>
+      <section class="integration wrap" aria-labelledby="integration-title">
+        <div class="integration-heading"><div><div class="overline">WHERE THIS WOULD FIT</div><h2 id="integration-title">Between intention and action.</h2></div><div class="integration-aside">Not another dashboard to check.<br>An execution gate the existing stack can call.</div></div>
+        <div class="integration-line"><div class="integration-node"><span>01</span><strong>Existing automation</strong><small>AI planner · n8n · Make · Matrixify</small></div><div class="integration-arrow">→</div><div class="integration-node integration-highlight"><span>02 / MARGINLINE</span><strong>Commercial preflight</strong><small>Stock · Margin · Contracts · Approvals</small></div><div class="integration-arrow">→</div><div class="integration-node"><span>03</span><strong>Approved execution</strong><small>Release, revise, or request review</small></div></div>
+        <div class="integration-disclaimer"><span class="tiny-indicator"></span>Concept prototype. Uses synthetic data and deterministic rules. No Shopify or MyDigital-Metrics systems are connected, and no actions are executed.</div>
+      </section>
+    </main>
+    <footer class="site-footer wrap"><div class="footer-brand">marginline<span>.</span></div><div>A small product demonstration built to start a bigger conversation.</div><a href="#top" aria-label="Back to top">Back to top ↑</a></footer>
+  </div>
+</body>
+</html>
