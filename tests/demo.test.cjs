@@ -58,13 +58,14 @@ function harness() {
     createObjectURL(blob) { lastUrl = blob; return "blob:test"; },
     revokeObjectURL() {}
   };
+  node("evidence").hidden = true;
   vm.runInNewContext(script, {document, window, URL, Blob, setTimeout, console});
   return {
     node,
     trigger(id, event = "click") {
       const fn = listeners.get(id + ":" + event);
       assert.ok(fn, "listener registered for " + id + ":" + event);
-      fn();
+      fn({preventDefault() {}});
     },
     downloads
   };
@@ -140,10 +141,12 @@ test("suggested fix works, and restart resets the original proposal", () => {
 
 test("expandable evidence opens, closes, and exposes honest product limitations", () => {
   const d = harness();
-  assert.equal(d.node("evidence").hidden, false); // mock starts visible, real HTML [hidden] handles initial
+  assert.equal(d.node("evidence").hidden, true);
   d.trigger("evidence-toggle");
-  assert.equal(d.node("evidence-toggle")["aria-expanded"], "false");
-  d.trigger("evidence-toggle");
+  assert.equal(d.node("evidence").hidden, false);
   assert.equal(d.node("evidence-toggle")["aria-expanded"], "true");
+  d.trigger("evidence-toggle");
+  assert.equal(d.node("evidence").hidden, true);
+  assert.equal(d.node("evidence-toggle")["aria-expanded"], "false");
   assert.match(d.node("math-conclusion").textContent, /shared release check/i);
 });
