@@ -76,6 +76,15 @@ test("the interactive demo has all required markup targets", () => {
   assert.deepEqual(missing, []);
 });
 
+test("the above-fold hero launches the guided walkthrough without extra ceremony", () => {
+  const d = harness();
+  assert.match(d.node("planned-number").innerHTML, /—/);
+  d.trigger("hero-start");
+  assert.equal(d.node("instrument").dataset.stage, "1");
+  assert.equal(d.node("decision-status").textContent, "Both passed");
+  assert.match(d.node("planned-number").innerHTML, /—/);
+});
+
 test("4-stage progression shows the shared-inventory collision", () => {
   const d = harness();
   assert.equal(d.node("instrument").dataset.stage, "0");
