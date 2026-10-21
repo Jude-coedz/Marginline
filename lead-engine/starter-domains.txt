@@ -1,0 +1,14 @@
+# Candidate storefronts to audit (not validated sales leads).
+# Listed in a September 2026 independent Shopify skincare-store roundup:
+# https://dappasol.com/guides/shopify-skincare-store-examples/
+# Paste only the domains below into Discover > Company domains.
+threeshipsbeauty.com
+dieuxskin.com
+klur.co
+rosenskincare.com
+buttahskin.com
+fatco.com
+nuriabeauty.com
+cardonskincare.com
+jaxonlane.com
+alpynbeauty.com
