@@ -1,78 +1,1055 @@
-import React,{useState,useEffect,useMemo,useCallback} from 'react';
-import {createRoot} from 'react-dom/client';
-import {motion,AnimatePresence,useReducedMotion} from 'framer-motion';
-import {ArrowUpRight,ArrowRight,Check,Copy,Play,Search,RefreshCw,LockKeyhole,X,ShieldCheck,ExternalLink,ChevronDown,AlertCircle,Clock3,SlidersHorizontal,Globe2,Sparkles,ChevronRight,Layers,PanelRightClose,Download,KeyRound,Database,CalendarDays,ArrowDownRight,Zap,CheckCircle2,Info} from 'lucide-react';
-import Reveal from './components/Reveal';
-import SpotlightCard from './components/SpotlightCard';
-import StatusMark from './components/StatusMark';
-import './styles.css';
-
-const SECTORS=[['beauty','Beauty & skincare'],['wellness','Health & wellness'],['dental','Dental & oral care'],['fashion','Fashion & accessories'],['home','Home & lifestyle']];
-const REGIONS=[['uk','United Kingdom'],['us','United States'],['ca','Canada']];
-const STAGES=[['new','New'],['review','Researching'],['approved','Approved'],['contacted','Contacted'],['replied','Replied'],['meeting','Meeting booked'],['won','Won'],['not_fit','Not a fit']];
-const EASE=[.22,1,.36,1];
-function useLocalValue(key,initial){const [v,setV]=useState(()=>{try{return JSON.parse(localStorage.getItem(key))??initial}catch{return initial}});useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(v))}catch{}},[key,v]);return [v,setV]}
-function fmtDate(x){if(!x)return 'Not yet';try{return new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(x))}catch{return '—'}}
-function cls(...v){return v.filter(Boolean).join(' ')}
-function Brand(){return <div className="brand"><span className="brand-symbol"><span className="logo-arcs">⌁</span></span><span className="brand-name">prospect<span className="brand-point">.</span></span><span className="brand-by">for MyDigital-Metrics</span></div>}
-function Pill({children,variant='default'}){return <span className={cls('pill','pill-'+variant)}>{children}</span>}
-function ButtonCopy({text,label='Copy draft'}){const [copied,setCopied]=useState(false);return <button className="btn btn-ghost btn-sm" onClick={async()=>{try{await navigator.clipboard.writeText(text||'');setCopied(true);setTimeout(()=>setCopied(false),1600)}catch{}}}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':label}</button>}
-function Choice({label,options,value,onChange}){return <label className="choice"><span className="choice-label">{label}</span><span className="choice-select"><select value={value} onChange={e=>onChange(e.target.value)}>{options.map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><ChevronDown size={17}/></span></label>}
-function PulseGraphic({active=false}){return <SpotlightCard className={cls('signal-graphic',active&&'signal-graphic--active')} aria-hidden="true"><div className="signal-mesh"></div><div className="signal-legend"><span>PROSPECT INTELLIGENCE</span><span className="signal-corner">LIVE SEARCH</span></div><svg className="signal-svg" viewBox="0 0 460 252" fill="none" preserveAspectRatio="xMidYMid meet">
- <defs><linearGradient id="beam" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#A7F4BF" stopOpacity=".82"/><stop offset="1" stopColor="#D7FF8B" stopOpacity=".2"/></linearGradient></defs>
- <circle cx="239" cy="127" r="99" stroke="#6F8D77" strokeOpacity=".28" strokeDasharray="3 6"/><circle cx="239" cy="127" r="69" stroke="#6F8D77" strokeOpacity=".33"/><circle cx="239" cy="127" r="35" stroke="#738D76" strokeOpacity=".48"/><path d="M140 127h198 M239 28v198" stroke="#66866E" strokeOpacity=".18"/>
- <path d="M239 127 L313 42" stroke="url(#beam)" strokeWidth="2" className="signal-scanner"/>
- <path d="M90 72 Q152 18 191 77 Q239 127 308 97 Q361 90 407 123" stroke="#BBDDC0" strokeWidth="1" strokeOpacity=".48" strokeDasharray="2 5"/>
- <path d="M97 192 Q157 184 177 145 Q238 85 281 164 Q340 192 402 167" stroke="#BBDDC0" strokeWidth="1" strokeOpacity=".48" strokeDasharray="2 5"/>
- {[{x:97,y:192},{x:191,y:77},{x:308,y:97},{x:403,y:167},{x:282,y:163}].map((p,i)=><g key={i}><circle cx={p.x} cy={p.y} r="10" fill="#12231E" stroke="#5C816E" strokeOpacity=".56"/><circle cx={p.x} cy={p.y} r="3.5" fill={i===3?'#C6F48A':'#8CBDA6'}/></g>)}
- <circle cx="239" cy="127" r="15" fill="#19352C" stroke="#C7FF91" strokeWidth="1.2"/><circle cx="239" cy="127" r="5" fill="#D8FF96"/>
- <path d="M239 142 V175 H201" stroke="#9BB9A4" strokeOpacity=".45"/><path d="M254 127 H301 V145 H339" stroke="#9BB9A4" strokeOpacity=".45"/>
- <text x="151" y="181" fill="#86A998" fontSize="10" letterSpacing="1.4">DISCOVER</text><text x="346" y="149" fill="#86A998" fontSize="10" letterSpacing="1.4">VERIFY</text>
- </svg><div className="signal-footer"><span><span className="signal-dot"/> OFFICIAL WEBSITES ONLY</span><span>GOOGLE SEARCH / GEMINI</span></div></SpotlightCard>}
-function Empty({onSearch,ready}){return <div className="empty"><div className="empty-art" aria-hidden="true"><div className="empty-circle"><Search size={34} strokeWidth={1.5}/></div><span className="empty-cross c1">+</span><span className="empty-cross c2">+</span><span className="empty-cross c3">+</span></div><p className="empty-overline">NO LEADS TO REVIEW</p><h3>The good ones are<br/>still out there.</h3><p className="empty-copy">Choose a market, run your search, and we’ll check the websites before adding anyone to your shortlist.</p><button className="text-cta" onClick={onSearch}>{ready?'Start a search':'Connect Gemini to start'} <ArrowUpRight size={16}/></button></div>}
-function ResultsRow({lead,onClick,i}){return <motion.button className="result-row" onClick={onClick} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.32,delay:Math.min(i*.05,.3),ease:EASE}}><div className="res-brand"><span className="res-monogram">{(lead.name||lead.domain||'?').slice(0,1).toUpperCase()}</span><div><strong>{lead.name||lead.domain}</strong><small>{lead.domain}</small></div></div><div className="res-evidence"><span className={cls('signal-label',lead.shopify?'positive':'uncertain')}><span className="tiny-bullet"/>{lead.shopify?'Shopify detected':'Storefront checked'}</span><small>{lead.reason||'Public homepage audited'}</small></div><div className="res-score"><strong>{lead.score??0}</strong><small>/100</small></div><div className="res-arrow"><ArrowUpRight size={18}/></div></motion.button>}
-function downloadCSV(leads){const fields=['name','domain','sector','region','score','shopify','qualification','stage','website','reason','scanned_at'];const esc=(x)=>`"${String(x??'').replaceAll('"','""')}"`;const csv=[fields.join(','),...leads.map(r=>fields.map(k=>esc(r[k])).join(','))].join('\r\n');const a=document.createElement('a');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.href=url;a.download='prospect-shortlist.csv';a.click();URL.revokeObjectURL(url)}
-function App(){
- const reduce=useReducedMotion();
- const [health,setHealth]=useState(null),[access,setAccess]=useState(()=>sessionStorage.getItem('prospect_access')||''),[accessInput,setAccessInput]=useState('');
- const [localLeads,setLocalLeads]=useLocalValue('prospect_v3_leads',[]),[localRuns,setLocalRuns]=useLocalValue('prospect_v3_runs',[]);
- const [remoteLeads,setRemoteLeads]=useState([]),[remoteRuns,setRemoteRuns]=useState([]);
- const [sector,setSector]=useLocalValue('prospect_sector','beauty'),[region,setRegion]=useLocalValue('prospect_region','uk');
- const [activeTab,setActiveTab]=useState('leads'),[filter,setFilter]=useState('all'),[selected,setSelected]=useState(null),[drawer,setDrawer]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const storage=Boolean(health?.storage);const leads=storage?remoteLeads:localLeads;const runs=storage?remoteRuns:localRuns;const ready=Boolean(health?.search&&health?.secure);const canRun=ready&&Boolean(access);
- const [draftSubject,setDraftSubject]=useState(''),[draftBody,setDraftBody]=useState('');
- const send=useCallback(async(path,options={})=>{const response=await fetch(path,{...options,headers:{'Content-Type':'application/json','X-Prospect-Key':access,...(options.headers||{})}});const payload=await response.json().catch(()=>({}));if(!response.ok)throw Error(payload.error||`Request failed (${response.status})`);return payload},[access]);
- const refreshStatus=useCallback(async()=>{try{const r=await fetch('/api/status');if(!r.ok)throw Error('No backend');setHealth(await r.json())}catch{setHealth({search:false,secure:false,storage:false,schedule:false,missing:['Backend unavailable']})}},[]);
- const refresh=useCallback(async()=>{if(!access||!storage)return;setLoading(true);try{const r=await send('/api/leads');setRemoteLeads(r.leads||[]);setRemoteRuns(r.runs||[])}catch(e){setError(e.message)}finally{setLoading(false)}},[access,storage,send]);
- useEffect(()=>{refreshStatus()},[refreshStatus]);useEffect(()=>{refresh()},[refresh]);
- const run=async()=>{setError('');setNotice('');if(!canRun){setDrawer(true);return;}setBusy(true);setActiveTab('runs');try{const out=await send('/api/run',{method:'POST',body:JSON.stringify({sector,region})});if(out.stored){await refresh()}else{
-   setLocalLeads(old=>{const map=new Map(old.map(x=>[x.domain,x]));for(const item of out.leads||[]){const existing=map.get(item.domain);map.set(item.domain,existing?{...item,id:existing.id,stage:existing.stage,notes:existing.notes,outreach_body:existing.outreach_body,outreach_subject:existing.outreach_subject}:item);}return [...map.values()].sort((a,b)=>(b.score||0)-(a.score||0));});
-   setLocalRuns(old=>[{id:String(Date.now()),status:'completed',trigger:'manual',sector,region,started_at:new Date().toISOString(),found:out.found,added:out.added,verified:out.verified,checked:out.checked,failed:out.failed,details:out.details},...old].slice(0,25));}
-   setNotice(`Search finished: ${out.checked} websites verified, ${out.failed} unavailable. ${out.stored?'Saved to database':'Saved in this browser'}.`);setActiveTab('leads');
- }catch(e){setError(e.message);setActiveTab('runs')}finally{setBusy(false)}};
- const update=async(changes)=>{if(!selected)return;try{if(storage)await send('/api/leads?id='+encodeURIComponent(selected.id),{method:'PATCH',body:JSON.stringify(changes)});if(storage)setRemoteLeads(old=>old.map(x=>x.id===selected.id?{...x,...changes}:x));else setLocalLeads(old=>old.map(x=>x.domain===selected.domain?{...x,...changes}:x));setSelected(x=>({...x,...changes}));setNotice('Saved')}catch(e){setError(e.message)}};
- const openLead=(lead)=>{setSelected(lead);setDraftSubject(lead.outreach_subject||'');setDraftBody(lead.outreach_body||'')};
- const counts=useMemo(()=>({all:leads.length,shopify:leads.filter(x=>x.shopify).length,ready:leads.filter(x=>x.stage==='approved').length}),[leads]);
- const visible=leads.filter(l=>filter==='all'||(filter==='shopify'&&l.shopify)||(filter==='ready'&&l.stage==='approved'));
- const latest=runs[0];
- return <div className="shell"><header className="header"><div className="header-inner"><Brand/><div className="navmeta"><span className="nav-edition">CLIENT ACQUISITION / V03</span><span className="nav-separator"/><span className="provider"><span className={cls('provider-dot',ready&&'provider-on')}/>{health===null?'Checking connection':ready?'Gemini ready':'Setup needed'}</span><button className="nav-settings" onClick={()=>{setDrawer(true);refreshStatus()}}><SlidersHorizontal size={17}/><span>Settings</span></button></div></div></header>
- <main className="page">
-  <div className="hero"><Reveal className="hero-copy"><div className="eyebrow"><span className="eyebrow-orb"/> RESEARCH, WITHOUT THE REPETITION</div><h1>The right companies.<br/><span>Already researched.</span></h1><p>Tell Prospect who your ideal customers are. Gemini searches the live web, we check their storefronts, and you get a shortlist you can actually use.</p><div className="hero-trust"><span><ShieldCheck size={15}/> Source-backed research</span><span><Zap size={15}/> No manual lead entry</span></div></Reveal><Reveal className="graphic-wrap" delay={120}><PulseGraphic active={busy}/></Reveal></div>
-  <Reveal className="builder" delay={80}><div className="builder-title"><div><span className="mini-label">01 / SEARCH BRIEF</span><h2>Who should we find?</h2></div><span className="builder-detail"><Globe2 size={15}/> Google Search grounding</span></div>
-   <div className="builder-main"><Choice label="INDUSTRY" options={SECTORS} value={sector} onChange={setSector}/><Choice label="LOCATION" options={REGIONS} value={region} onChange={setRegion}/><div className="builder-submit"><button className="btn-primary" onClick={run} disabled={busy}><span className="run-icon">{busy?<RefreshCw size={19} className="spinning"/>:<Search size={19}/>}</span>{busy?'Researching websites…':'Find prospects'}<ArrowUpRight size={18}/></button></div></div>
-   <div className="builder-bottom"><div className="research-path"><span><span className="step-num">01</span> Search businesses</span><span className="path-link"/><span><span className="step-num">02</span> Inspect websites</span><span className="path-link"/><span><span className="step-num">03</span> Review shortlist</span></div><button onClick={()=>setDrawer(true)} className="setup-link">{ready?storage?'Scheduled storage enabled':'Manual mode · local storage':'Connect to start'} <ChevronRight size={14}/></button></div>
-  </Reveal>
-  <section className="shortlist"><div className="section-head"><div><span className="mini-label">02 / RESEARCH OUTPUT</span><h2>Your shortlist<span className="count-bubble">{counts.all}</span></h2><p>Only businesses with audited public homepages appear below.</p></div><div className="section-actions">{counts.all>0&&<button className="btn btn-ghost" onClick={()=>downloadCSV(leads)}><Download size={16}/> Export CSV</button>}<button className="btn btn-outline" onClick={()=>setActiveTab(activeTab==='leads'?'runs':'leads')}>{activeTab==='leads'?'Run history':'Back to prospects'}<ArrowUpRight size={15}/></button></div></div>
-   <div className="shortlist-grid"><div className="shortlist-main"><AnimatePresence mode="wait">{activeTab==='leads'?<motion.div key="lead-view" initial={reduce?false:{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:.22}}>{leads.length>0?<><div className="shortlist-filters"><button className={cls('filter',filter==='all'&&'selected')} onClick={()=>setFilter('all')}>All prospects <span>{counts.all}</span></button><button className={cls('filter',filter==='shopify'&&'selected')} onClick={()=>setFilter('shopify')}>Shopify detected <span>{counts.shopify}</span></button><button className={cls('filter',filter==='ready'&&'selected')} onClick={()=>setFilter('ready')}>Approved <span>{counts.ready}</span></button></div><div className="result-head"><span>COMPANY</span><span>WEBSITE SIGNAL</span><span>SCORE</span><span/></div>{visible.length?visible.map((l,i)=><ResultsRow key={l.id||l.domain} lead={l} i={i} onClick={()=>openLead(l)}/>):<div className="no-filter-results">No prospects in this filter. Try another view.</div>}</>:<Empty ready={ready} onSearch={run}/>}</motion.div>:<motion.div key="run-view" initial={reduce?false:{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:.22}}><div className="history-heading">Recent research runs</div>{busy&&<div className="history-record"><StatusMark state="running"/><div><strong>Discovery in progress</strong><small>Google Search and independent website checks</small></div><span>Active</span></div>}{runs.length?runs.map((r,i)=><div className="history-record" key={r.id||i}><StatusMark state={r.status==='completed'?'done':r.status==='failed'?'error':'running'}/><div><strong>{SECTORS.find(x=>x[0]===r.sector)?.[1]||r.sector} · {REGIONS.find(x=>x[0]===r.region)?.[1]||r.region}</strong><small>{fmtDate(r.started_at)} · {r.found||0} discovered · {r.checked??0} verified</small>{r.error&&<small className="failure">{r.error}</small>}</div><span>{r.status}</span></div>):!busy&&<div className="runs-empty">No previous searches. Run the brief above to begin.</div>}</motion.div>}</AnimatePresence></div>
-    <aside className="right-rail"><div className="rail-heading"><span>AT A GLANCE</span><span className="rail-timestamp">{latest?fmtDate(latest.started_at):'No runs yet'}</span></div><div className="rail-metric"><strong>{counts.all.toString().padStart(2,'0')}</strong><span>researched prospects</span></div><div className="rail-rule"/><div className="rail-pair"><span>Shopify identified</span><strong>{counts.shopify}</strong></div><div className="rail-pair"><span>Approved to contact</span><strong>{counts.ready}</strong></div><div className="rail-note"><Info size={15}/><p>A lead score measures visible website signals. It does <strong>not</strong> guarantee sales potential or purchase intent.</p></div><div className="rail-foot"><span className="rail-led"/> {storage?'Database-connected workspace':'Saved to this browser'}</div></aside></div>
-   <div className="evidence-caption"><ShieldCheck size={16}/><span>Grounded Google discovery, independently validated websites. Every outreach draft requires your review.</span></div>
-  </section>
-  <footer className="footer"><span>© Prospect for MyDigital-Metrics</span><span>From first search to first conversation.</span><span>Made to find the right fit.</span></footer>
- </main>
- <AnimatePresence>{(error||notice)&&<motion.div className={cls('toast',error&&'toast-error')} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={{opacity:0,y:10}} role="status"><span>{error?<AlertCircle size={19}/>:<CheckCircle2 size={19}/>}</span><p>{error||notice}</p><button aria-label="Dismiss" onClick={()=>{setError('');setNotice('')}}><X size={16}/></button></motion.div>}</AnimatePresence>
- <AnimatePresence>{drawer&&<><motion.div className="overlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setDrawer(false)}/><motion.aside className="drawer" role="dialog" aria-modal="true" aria-label="Connection setup" initial={reduce?{opacity:0}:{x:'100%'}} animate={{opacity:1,x:0}} exit={reduce?{opacity:0}:{x:'100%'}} transition={{type:'spring',stiffness:350,damping:38}}><div className="drawer-top"><div><span className="mini-label">WORKSPACE SETTINGS</span><h2>Connect your engine.</h2></div><button className="close" onClick={()=>setDrawer(false)} aria-label="Close"><X size={22}/></button></div><p className="drawer-intro">Two environment settings activate manual prospect sourcing. Daily scheduling and team storage can be added later.</p><div className="connection-list">{[{title:'Gemini + Google Search',desc:'Find real business websites using Google grounding.',env:'GEMINI_API_KEY',ok:health?.search,mandatory:true},{title:'Workspace access',desc:'Keeps the Gemini endpoint private.',env:'APP_ACCESS_KEY',ok:health?.secure,mandatory:true},{title:'Shared database',desc:'Optional. Keeps results across devices and scheduled runs.',env:'SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY',ok:health?.storage},{title:'Daily automation',desc:'Optional. Uses a Vercel cron secret and Supabase.',env:'CRON_SECRET',ok:health?.schedule}].map(s=><div className="conn-row" key={s.env}><StatusMark state={s.ok?'done':'idle'} size={20}/><div className="conn-detail"><div className="conn-top"><strong>{s.title}</strong><span>{s.ok?'Connected':s.mandatory?'Required':'Optional'}</span></div><p>{s.desc}</p><code>{s.env}</code></div></div>)}</div><div className="access-panel"><div className="access-title"><KeyRound size={18}/><strong>Unlock your workspace</strong></div><p>Set <code>APP_ACCESS_KEY</code> in Vercel, then enter that same value here. The access key is kept only in this browser tab.</p>{access?<div className="access-saved"><CheckCircle2 size={17}/> Code entered <button onClick={()=>{sessionStorage.removeItem('prospect_access');setAccess('')}}>Clear</button></div>:<form onSubmit={e=>{e.preventDefault();const key=accessInput.trim();if(key){sessionStorage.setItem('prospect_access',key);setAccess(key);setAccessInput('');setNotice('Access code saved. Try a search to verify it.')}}}><input type="password" autoComplete="off" placeholder="Workspace access code" value={accessInput} onChange={e=>setAccessInput(e.target.value)} required/><button type="submit">Unlock <ArrowRight size={15}/></button></form>}</div><div className="drawer-help"><a href="https://aistudio.google.com/apikey" rel="noopener noreferrer" target="_blank">Get a Gemini API key <ExternalLink size={14}/></a><a href="https://vercel.com/dashboard" rel="noopener noreferrer" target="_blank">Open Vercel settings <ExternalLink size={14}/></a></div><button className="refresh-button" onClick={()=>{refreshStatus();refresh()}}><RefreshCw size={15}/> Recheck connections</button></motion.aside></>}</AnimatePresence>
- <AnimatePresence>{selected&&<><motion.div className="overlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setSelected(null)}/><motion.aside className="drawer detail" role="dialog" aria-modal="true" aria-label="Prospect detail" initial={reduce?{opacity:0}:{x:'100%'}} animate={{opacity:1,x:0}} exit={reduce?{opacity:0}:{x:'100%'}} transition={{type:'spring',stiffness:350,damping:38}}><div className="drawer-top"><div><span className="mini-label">PROSPECT REVIEW</span><h2>{selected.name||selected.domain}</h2></div><button className="close" onClick={()=>setSelected(null)} aria-label="Close"><X size={22}/></button></div><div className="detail-website"><a href={selected.website||`https://${selected.domain}`} target="_blank" rel="noopener noreferrer">{selected.domain} <ExternalLink size={14}/></a><Pill variant={selected.shopify?'green':'gray'}>{selected.shopify?'Shopify detected':'Unverified Shopify'}</Pill></div><div className="detail-score"><div><span className="mini-label">WEBSITE FIT SCORE</span><strong>{selected.score}<small>/100</small></strong></div><p>{selected.reason}</p></div><section className="detail-section"><h3>Evidence collected</h3><p>Signals below were detected in publicly accessible homepage markup.</p>{(selected.evidence||[]).length?(selected.evidence||[]).map((ev,i)=><div className="evidence-row" key={i}><Check size={16}/><span>{ev.label}</span><a href={ev.source} target="_blank" rel="noopener noreferrer" aria-label="Open evidence"><ArrowUpRight size={15}/></a></div>):<div className="no-evidence">No confirmed technology or catalogue signals. Inspect the website manually.</div>}{selected.scanned_at&&<small className="evidence-date">Last checked: {fmtDate(selected.scanned_at)}</small>}</section><section className="detail-section"><h3>Review stage</h3><div className="choice-select detail-choose"><select value={selected.stage||'new'} onChange={e=>update({stage:e.target.value})}>{STAGES.map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><ChevronDown size={15}/></div></section><section className="detail-section"><div className="detail-section-heading"><h3>First-touch draft</h3><Pill variant="gray">Human-approved</Pill></div><p>Editable starting point. Never sent automatically.</p><label className="draft-label">SUBJECT<input value={draftSubject} onChange={e=>setDraftSubject(e.target.value)}/></label><label className="draft-label">MESSAGE<textarea rows="9" value={draftBody} onChange={e=>setDraftBody(e.target.value)}/></label><div className="draft-buttons"><button className="btn btn-primary-mini" onClick={()=>update({outreach_subject:draftSubject,outreach_body:draftBody})}>Save draft <Check size={15}/></button><ButtonCopy text={`Subject: ${draftSubject}\n\n${draftBody}`}/></div></section><p className="detail-fine">Search geography and lead score do not verify market presence, company size, or intent to buy. Review independently before outreach.</p></motion.aside></>}</AnimatePresence>
- </div>;
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import { createRoot } from "react-dom/client";
+import { MotionConfig, useReducedMotion } from "framer-motion";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  Search,
+  Settings2,
+  RefreshCw,
+  Download,
+  Check,
+  Globe2,
+  ShieldCheck,
+  Clock3,
+  AlertCircle,
+  ChevronRight,
+  KeyRound,
+  Database,
+  X,
+  SlidersHorizontal,
+} from "lucide-react";
+import SpotlightCard from "./components/vendor/SpotlightCard";
+import Inspector, { SourceLink } from "./components/Inspector";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/Tabs";
+import {
+  SECTORS,
+  REGIONS,
+  STAGES,
+  labelFor,
+  dateLabel,
+  mergeLeads,
+  exportLeads,
+} from "./lib";
+import "@fontsource/dm-sans/400.css";
+import "@fontsource/dm-sans/500.css";
+import "@fontsource/dm-sans/600.css";
+import "@fontsource/dm-sans/700.css";
+import "@fontsource/manrope/500.css";
+import "@fontsource/manrope/600.css";
+import "./styles.css";
+function read(key, fallback, store = localStorage) {
+  try {
+    const value = JSON.parse(store.getItem(key));
+    return value == null ? fallback : value;
+  } catch {
+    return fallback;
+  }
 }
-
-createRoot(document.getElementById('root')).render(<App/>);
+function useStored(key, initial) {
+  const [value, setValue] = useState(() => {
+    const saved = read(key, initial);
+    return Array.isArray(initial) && !Array.isArray(saved) ? initial : saved;
+  });
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
+  }, [key, value]);
+  return [value, setValue, failed];
+}
+function Mark() {
+  return (
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <path
+        d="M5 22V7h9a6 6 0 0 1 0 12H9M10 24V12h5"
+        stroke="currentColor"
+        strokeWidth="2.3"
+      />
+      <circle cx="22" cy="5" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+function Status({ ok, children }) {
+  return (
+    <span className={`status ${ok ? "ok" : "pending"}`}>
+      <span />
+      {children}
+    </span>
+  );
+}
+function Select({ label, options, value, onChange, disabled }) {
+  return (
+    <label>
+      {label}
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map(([key, text]) => (
+          <option key={key} value={key}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+function Pipeline({ busy, latest }) {
+  const reduce = useReducedMotion();
+  return (
+    <SpotlightCard
+      className="pipeline"
+      theme="light"
+      intensity={reduce ? 0 : 0.08}
+      borderGlow={0}
+      proximity={0}
+      flare={false}
+      grain={0}
+      style={{ "--spotlight-card-shadow": "none" }}
+    >
+      <div className="pipeline-title">
+        <span>Research protocol</span>
+        <Status ok={latest?.status === "completed"}>
+          {busy
+            ? "Running"
+            : latest?.status === "completed"
+              ? "Last run completed"
+              : latest?.status === "failed"
+                ? "Last run failed"
+                : "Awaiting first run"}
+        </Status>
+      </div>
+      <ol>
+        <li>
+          <Globe2 />
+          <div>
+            <strong>Discover</strong>
+            <span>Gemini + Google Search</span>
+          </div>
+        </li>
+        <li>
+          <ShieldCheck />
+          <div>
+            <strong>Check</strong>
+            <span>Public storefront evidence</span>
+          </div>
+        </li>
+        <li>
+          <Check />
+          <div>
+            <strong>Review</strong>
+            <span>Your decision before outreach</span>
+          </div>
+        </li>
+      </ol>
+      {busy && (
+        <p className="running-copy" role="status">
+          <RefreshCw className="spin" size={14} />
+          Waiting for grounded search and website checks. Counts appear when the
+          server responds.
+        </p>
+      )}
+    </SpotlightCard>
+  );
+}
+function RunRecord({ run }) {
+  return (
+    <details className="run-record">
+      <summary>
+        <span className={`run-state ${run.status}`} aria-hidden="true">
+          {run.status === "completed" ? (
+            <Check size={16} />
+          ) : (
+            <AlertCircle size={16} />
+          )}
+        </span>
+        <span className="run-identity">
+          <strong>
+            {labelFor(SECTORS, run.sector)} · {labelFor(REGIONS, run.region)}
+          </strong>
+          <small>
+            {dateLabel(run.started_at)} · {run.status}
+          </small>
+        </span>
+        <span className="run-summary">
+          {run.status === "failed"
+            ? "See error"
+            : `${run.found ?? 0} found / ${run.checked ?? 0} accepted`}
+        </span>
+        <ChevronRight size={16} />
+      </summary>
+      <div className="run-details">
+        {run.error && <p className="error-text">{run.error}</p>}
+        {run.status === "completed" && (
+          <>
+            <dl className="run-counts">
+              {[
+                ["Discovered", run.found],
+                ["Accepted", run.checked],
+                ["Discarded", run.failed],
+                ["Shopify markers", run.verified],
+              ].map(([label, n]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{n ?? 0}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="small muted">
+              {run.details?.model} · Reported search queries
+            </p>
+            <ul>
+              {(run.details?.queries || []).map((q, i) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ul>
+            {!run.details?.queries?.length && (
+              <p className="small">
+                The provider supplied citations without search-query text.
+              </p>
+            )}
+            <h4>Search sources</h4>
+            <div className="source-links">
+              {(run.details?.citations || []).map((c, i) => (
+                <SourceLink key={i} href={c.url}>
+                  {c.title || "Search source"}
+                </SourceLink>
+              ))}
+            </div>
+            <h4>Candidate decisions</h4>
+            {(run.details?.outcomes || run.details?.errors || []).map(
+              (c, i) => (
+                <div className="candidate-outcome" key={i}>
+                  <strong>{c.domain}</strong>
+                  <span>
+                    {c.accepted ? "Accepted for review" : "Discarded"} ·{" "}
+                    {c.reason || c.error}
+                  </span>
+                </div>
+              ),
+            )}
+          </>
+        )}
+      </div>
+    </details>
+  );
+}
+function App() {
+  const [health, setHealth] = useState(null),
+    [tab, setTab] = useState("shortlist"),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(false),
+    [selected, setSelected] = useState(null),
+    [filter, setFilter] = useState("all"),
+    [query, setQuery] = useState(""),
+    [briefExpanded, setBriefExpanded] = useState(false);
+  const [localLeads, setLocalLeads, leadsStorageError] = useStored(
+      "prospect_v3_leads",
+      [],
+    ),
+    [localRuns, setLocalRuns, runsStorageError] = useStored(
+      "prospect_v3_runs",
+      [],
+    ),
+    [sector, setSector] = useStored("prospect_sector", "beauty"),
+    [region, setRegion] = useStored("prospect_region", "uk");
+  const [remoteLeads, setRemoteLeads] = useState([]),
+    [remoteRuns, setRemoteRuns] = useState([]),
+    [access, setAccess] = useState(() => {
+      try {
+        return sessionStorage.getItem("prospect_access") || "";
+      } catch {
+        return "";
+      }
+    }),
+    [accessInput, setAccessInput] = useState(""),
+    [authBusy, setAuthBusy] = useState(false),
+    [authError, setAuthError] = useState("");
+  const runLock = useRef(false);
+  const storage = Boolean(health?.storage);
+  const leads = storage ? remoteLeads : localLeads;
+  const runs = storage ? remoteRuns : localRuns;
+  const latest = runs[0];
+  const configured = Boolean(health?.search && health?.secure);
+  const canRun = configured && Boolean(access);
+  const [connected, setConnected] = useState(false);
+  const send = useCallback(
+    async (path, options = {}, key = access) => {
+      const response = await fetch(path, {
+        ...options,
+        headers: { "Content-Type": "application/json", "X-Prospect-Key": key },
+        signal: AbortSignal.timeout(65000),
+      });
+      const payload = await response.json().catch(() => {
+        throw Error(
+          "The API returned an invalid response. Check the server logs.",
+        );
+      });
+      if (!response.ok)
+        throw Error(payload.error || `Request failed (${response.status})`);
+      return payload;
+    },
+    [access],
+  );
+  const refreshStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/status", {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) throw Error();
+      const h = await response.json();
+      if (h.service !== "Prospect") throw Error();
+      setHealth(h);
+    } catch {
+      setHealth({
+        search: false,
+        secure: false,
+        storage: false,
+        schedule: false,
+        missing: [
+          "API unavailable. Run npm run dev from lead-engine, or use a Vercel preview.",
+        ],
+      });
+    }
+  }, []);
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus]);
+  const refresh = useCallback(
+    async ({ preserveError = false } = {}) => {
+      if (!access) return;
+      setLoading(true);
+      try {
+        const out = await send("/api/leads");
+        setConnected(true);
+        if (out.stored) {
+          setRemoteLeads(out.leads || []);
+          setRemoteRuns(out.runs || []);
+        }
+        if (!preserveError) setError("");
+      } catch (e) {
+        setConnected(false);
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [access, send],
+  );
+  useEffect(() => {
+    if (access && health) refresh();
+  }, [access, storage, Boolean(health)]);
+  const run = async () => {
+    if (runLock.current) return;
+    if (!canRun) {
+      setTab("settings");
+      setNotice(
+        "Configure the server and unlock this workspace to start discovery.",
+      );
+      return;
+    }
+    runLock.current = true;
+    setBusy(true);
+    setBriefExpanded(false);
+    setError("");
+    setNotice("");
+    const startedAt = new Date().toISOString(),
+      selection = { sector, region };
+    try {
+      const out = await send("/api/run", {
+        method: "POST",
+        body: JSON.stringify(selection),
+      });
+      if (!Array.isArray(out.leads) || !Number.isInteger(out.found))
+        throw Error(
+          "The run returned an incomplete response. No results were saved.",
+        );
+      if (out.stored) {
+        setRemoteLeads((old) => mergeLeads(old, out.leads));
+        await refresh();
+      } else {
+        setLocalLeads((old) => mergeLeads(old, out.leads));
+        setLocalRuns((old) =>
+          [
+            {
+              id: crypto.randomUUID(),
+              ...selection,
+              status: "completed",
+              trigger: "manual",
+              started_at: startedAt,
+              finished_at: new Date().toISOString(),
+              found: out.found,
+              added: out.added,
+              verified: out.verified,
+              checked: out.checked,
+              failed: out.failed,
+              details: out.details,
+            },
+            ...old,
+          ].slice(0, 25),
+        );
+      }
+      setFilter("all");
+      setQuery("");
+      setTab(out.leads.length ? "shortlist" : "runs");
+      setNotice(
+        `Research complete. ${out.found} discovered, ${out.checked} accepted, ${out.failed} discarded. Review the evidence before outreach.`,
+      );
+    } catch (e) {
+      const message =
+        e.name === "TimeoutError"
+          ? "The request timed out. Check run history before retrying; the server may still be finishing."
+          : e.message;
+      setError(message);
+      if (!storage)
+        setLocalRuns((old) =>
+          [
+            {
+              id: crypto.randomUUID(),
+              ...selection,
+              status: "failed",
+              trigger: "manual",
+              started_at: startedAt,
+              error: message,
+            },
+            ...old,
+          ].slice(0, 25),
+        );
+      else await refresh({ preserveError: true });
+      setTab("runs");
+    } finally {
+      setBusy(false);
+      runLock.current = false;
+    }
+  };
+  const unlock = async (e) => {
+    e.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+    try {
+      await send("/api/leads", {}, accessInput);
+      try {
+        sessionStorage.setItem("prospect_access", accessInput);
+      } catch {
+        setNotice(
+          "Session storage is unavailable. Unlock again after reloading.",
+        );
+      }
+      setAccess(accessInput);
+      setConnected(true);
+      setAccessInput("");
+      setNotice("Workspace unlocked for this session.");
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+  const saveLead = async (changes) => {
+    const lead = selected;
+    if (storage)
+      await send("/api/leads?id=" + encodeURIComponent(lead.id), {
+        method: "PATCH",
+        body: JSON.stringify(changes),
+      });
+    const setter = storage ? setRemoteLeads : setLocalLeads;
+    setter((old) =>
+      old.map((x) => (x.domain === lead.domain ? { ...x, ...changes } : x)),
+    );
+    setSelected((old) => ({ ...old, ...changes }));
+  };
+  const visible = useMemo(
+    () =>
+      leads
+        .filter(
+          (l) =>
+            (filter === "all" ||
+              (filter === "shopify" && l.shopify) ||
+              (filter === "approved" && l.stage === "approved") ||
+              (filter === "new" && l.stage === "new")) &&
+            `${l.name} ${l.domain}`.toLowerCase().includes(query.toLowerCase()),
+        )
+        .sort((a, b) => (b.score || 0) - (a.score || 0)),
+    [leads, filter, query],
+  );
+  const claims = runs.flatMap((r) => r.details?.claims || []);
+  const approved = leads.filter((l) => l.stage === "approved").length;
+  return (
+    <>
+      <a className="skip-link" href="#workspace">
+        Skip to workspace
+      </a>
+      <header className="topbar">
+        <a className="brand" href="#workspace" aria-label="Prospect workspace">
+          <Mark />
+          <span>
+            prospect<span className="brand-period">.</span>
+          </span>
+        </a>
+        <span className="workspace-name">
+          MyDigital-Metrics <span>/</span> Research workspace
+        </span>
+        <div className="topbar-right">
+          <Status ok={configured}>
+            {health === null
+              ? "Checking configuration"
+              : configured
+                ? "Gemini configured"
+                : "Setup required"}
+          </Status>
+          <button
+            className="icon-button"
+            onClick={() => {
+              setTab("settings");
+              refreshStatus();
+            }}
+            aria-label="Open workspace settings"
+          >
+            <Settings2 size={18} />
+          </button>
+          <span
+            className="workspace-avatar"
+            title="MyDigital-Metrics workspace"
+          >
+            MD
+          </span>
+        </div>
+      </header>
+      <main id="workspace" className="workspace">
+        <div className="page-heading">
+          <div>
+            <h1>Prospect research</h1>
+            <p>
+              Discover businesses. Check the evidence. Start a better
+              conversation.
+            </p>
+          </div>
+          <span className="storage-caption">
+            <Database size={14} />
+            {storage ? "Shared workspace" : "Browser pilot"}
+            <span className="muted">· {leads.length} prospects</span>
+          </span>
+        </div>
+        {health?.testFixture && (
+          <p className="fixture-banner">
+            AUTOMATED QA · SYNTHETIC .test FIXTURES · NOT LIVE SOURCING
+          </p>
+        )}
+        <div className="workbench">
+          <aside className={`brief-panel ${briefExpanded ? "expanded" : ""}`}>
+            <div className="brief-heading">
+              <span className="brief-mark">
+                <SlidersHorizontal size={18} />
+              </span>
+              <h2>Your research brief</h2>
+              <button
+                className="brief-toggle text-button"
+                aria-expanded={briefExpanded}
+                aria-controls="brief-fields"
+                onClick={() => setBriefExpanded((v) => !v)}
+              >
+                {briefExpanded ? "Done" : "Edit"}
+              </button>
+            </div>
+            <p className="brief-summary">
+              {labelFor(SECTORS, sector)} · {labelFor(REGIONS, region)}
+            </p>
+            <p className="brief-intro">
+              Define the businesses worth a closer look. Your brief stays ready
+              for the next run.
+            </p>
+            <div className="brief-fields" id="brief-fields">
+              <Select
+                label="Business segment"
+                options={SECTORS}
+                value={sector}
+                onChange={setSector}
+                disabled={busy}
+              />
+              <Select
+                label="Target market"
+                options={REGIONS}
+                value={region}
+                onChange={setRegion}
+                disabled={busy}
+              />
+            </div>
+            <div className="brief-scope">
+              <span>Looking for</span>
+              <p>
+                Independent, direct-to-consumer brands with a public online
+                storefront.
+              </p>
+              <span>Checking for</span>
+              <p>
+                Commerce infrastructure, product links and public contact
+                pathways.
+              </p>
+            </div>
+            <button
+              className="button primary run-button"
+              disabled={busy || health === null}
+              onClick={run}
+            >
+              {busy ? (
+                <RefreshCw size={17} className="spin" />
+              ) : (
+                <Search size={17} />
+              )}
+              <span>{busy ? "Researching…" : "Find prospects"}</span>
+              {!busy && <ArrowRight size={16} />}
+            </button>
+            <p className="brief-footnote">
+              {busy
+                ? "Search is running. Keep this page open."
+                : canRun
+                  ? "One grounded search. Independently checked websites."
+                  : "Connect Gemini and unlock the workspace to begin."}
+            </p>
+            <div className="schedule-summary">
+              <Clock3 size={16} />
+              <div>
+                <strong>
+                  {health?.schedule
+                    ? "Daily schedule configured"
+                    : "Run on your terms"}
+                </strong>
+                <p>
+                  {health?.schedule
+                    ? "08:00 UTC · uses the last manual brief. Verify your Vercel scheduler."
+                    : "Manual discovery is available first. Add shared storage to enable daily research."}
+                </p>
+                <button
+                  className="text-button"
+                  onClick={() => setTab("settings")}
+                >
+                  {health?.schedule
+                    ? "Check configuration"
+                    : "Scheduling setup"}
+                  <ArrowUpRight size={14} />
+                </button>
+              </div>
+            </div>
+          </aside>
+          <section className="research-area" aria-label="Research workspace">
+            <Pipeline busy={busy} latest={latest} />
+            <Tabs value={tab} onValueChange={setTab}>
+              <div className="output-toolbar">
+                <TabsList aria-label="Workspace views">
+                  <TabsTrigger value="shortlist">
+                    Shortlist <span className="tab-count">{leads.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="runs">
+                    Run log{" "}
+                    {runs.length > 0 && (
+                      <span className="tab-count">{runs.length}</span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="settings">Connections</TabsTrigger>
+                </TabsList>
+                <span className="review-count">{approved} approved</span>
+              </div>
+              {(error || notice) && (
+                <div
+                  className={error ? "feedback error" : "feedback"}
+                  role={error ? "alert" : "status"}
+                >
+                  <span>
+                    {error ? <AlertCircle size={17} /> : <Check size={17} />}
+                  </span>
+                  <p>{error || notice}</p>
+                  <button
+                    className="icon-button"
+                    aria-label="Dismiss message"
+                    onClick={() => {
+                      setError("");
+                      setNotice("");
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+              {(leadsStorageError || runsStorageError) && !storage && (
+                <p className="feedback error" role="alert">
+                  Browser storage is unavailable or full. Changes remain in
+                  memory only; export your shortlist before closing.
+                </p>
+              )}
+              <TabsContent value="shortlist">
+                <div className="list-tools">
+                  <div className="filter-group" aria-label="Filter prospects">
+                    {[
+                      ["all", "All"],
+                      ["new", "To review"],
+                      ["shopify", "Shopify"],
+                      ["approved", "Approved"],
+                    ].map(([key, text]) => (
+                      <button
+                        key={key}
+                        className={filter === key ? "filter active" : "filter"}
+                        aria-pressed={filter === key}
+                        onClick={() => setFilter(key)}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="button plain export-button"
+                    disabled={!visible.length}
+                    onClick={() => exportLeads(visible)}
+                  >
+                    <Download size={15} />
+                    Export {visible.length > 0 ? `(${visible.length})` : ""}
+                  </button>
+                </div>
+                {leads.length > 0 && (
+                  <label className="search-field">
+                    <Search size={16} />
+                    <input
+                      type="search"
+                      aria-label="Search company or domain"
+                      value={query}
+                      placeholder="Search company or domain"
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </label>
+                )}
+                <div className="prospect-list" aria-busy={loading || busy}>
+                  <div className="list-columns">
+                    <span>Company / website</span>
+                    <span>Observed signals</span>
+                    <span>Technical fit</span>
+                    <span>Review</span>
+                  </div>
+                  {loading && !leads.length ? (
+                    <div className="empty-state">
+                      <p role="status">Loading workspace prospects…</p>
+                    </div>
+                  ) : !leads.length ? (
+                    <div className="empty-state">
+                      <div className="empty-index" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                        <Search size={23} />
+                      </div>
+                      <h2>
+                        Your next conversation
+                        <br />
+                        starts with a search.
+                      </h2>
+                      <p>
+                        Run your brief to find real businesses. Only websites
+                        that pass the public storefront checks reach this
+                        shortlist.
+                      </p>
+                      <button
+                        className="text-button"
+                        onClick={run}
+                        disabled={busy}
+                      >
+                        {configured
+                          ? "Run your research brief"
+                          : "Connect your research engine"}
+                        <ArrowRight size={16} />
+                      </button>
+                      <span className="empty-note">
+                        No sample leads. Your research belongs here.
+                      </span>
+                    </div>
+                  ) : visible.length ? (
+                    visible.map((lead) => (
+                      <button
+                        className="prospect-row"
+                        key={lead.id || lead.domain}
+                        onClick={() => setSelected(lead)}
+                        aria-label={`Review ${lead.name || lead.domain}`}
+                      >
+                        <span className="company-cell">
+                          <span className="row-letter">
+                            {(lead.name || lead.domain).slice(0, 1)}
+                          </span>
+                          <span>
+                            <strong>{lead.name || lead.domain}</strong>
+                            <small>{lead.domain}</small>
+                          </span>
+                        </span>
+                        <span className="signals-cell">
+                          <span
+                            className={
+                              lead.shopify ? "signal positive" : "signal"
+                            }
+                          >
+                            <span />
+                            {lead.shopify
+                              ? "Shopify marker"
+                              : "Storefront checked"}
+                          </span>
+                          <small>{lead.reason}</small>
+                        </span>
+                        <span className="score-cell">
+                          {lead.score}
+                          <small>/100</small>
+                        </span>
+                        <span className="stage-cell">
+                          {labelFor(STAGES, lead.stage)}
+                          <ArrowUpRight size={15} />
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="empty-filter">
+                      <p>No prospects match this view.</p>
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          setFilter("all");
+                          setQuery("");
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="list-footer">
+                  <span>
+                    <ShieldCheck size={14} />
+                    Evidence supports review. It does not prove buying intent.
+                  </span>
+                  {storage && (
+                    <button
+                      className="text-button"
+                      disabled={loading}
+                      onClick={refresh}
+                    >
+                      Refresh
+                    </button>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="runs">
+                <div className="view-heading">
+                  <div>
+                    <h2>Research run log</h2>
+                    <p>Queries, sources and every candidate decision.</p>
+                  </div>
+                  {storage && (
+                    <button
+                      className="button plain"
+                      disabled={loading}
+                      onClick={refresh}
+                    >
+                      <RefreshCw size={15} />
+                      Refresh
+                    </button>
+                  )}
+                </div>
+                {busy && (
+                  <p className="feedback" role="status">
+                    Research in progress. Results will appear when the server
+                    responds; no candidate counts are estimated.
+                  </p>
+                )}
+                {runs.length ? (
+                  runs.map((r) => <RunRecord key={r.id} run={r} />)
+                ) : (
+                  <div className="empty-filter">
+                    <Clock3 size={24} />
+                    <h3>No research runs yet</h3>
+                    <p>
+                      Run your brief to build an auditable research history.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="settings">
+                <div className="view-heading">
+                  <div>
+                    <h2>Research connections</h2>
+                    <p>
+                      Configuration presence is shown below. A successful run
+                      verifies provider access.
+                    </p>
+                  </div>
+                  <button className="button plain" onClick={refreshStatus}>
+                    <RefreshCw size={15} />
+                    Recheck
+                  </button>
+                </div>
+                <div className="connection-list">
+                  {[
+                    {
+                      title: "Gemini + Google Search",
+                      key: "GEMINI_API_KEY",
+                      ok: health?.search,
+                      description:
+                        "Required for live discovery. Server only; never enter the API key here.",
+                    },
+                    {
+                      title: "Workspace protection",
+                      key: "APP_ACCESS_KEY",
+                      ok: health?.secure,
+                      description: "Required to protect the research endpoint.",
+                    },
+                    {
+                      title: "Shared storage",
+                      key: "SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY",
+                      ok: health?.storage,
+                      description:
+                        "Optional for manual runs. Apply schema.sql to enable durable records.",
+                    },
+                    {
+                      title: "Daily automation",
+                      key: "CRON_SECRET",
+                      ok: health?.schedule,
+                      description:
+                        "Requires shared storage and an active Vercel cron deployment.",
+                    },
+                  ].map((c) => (
+                    <div className="connection" key={c.key}>
+                      <span
+                        className={
+                          c.ok ? "connection-check present" : "connection-check"
+                        }
+                      >
+                        {c.ok ? <Check size={17} /> : <span />}
+                      </span>
+                      <div>
+                        <h3>{c.title}</h3>
+                        <p>{c.description}</p>
+                        <code>{c.key}</code>
+                      </div>
+                      <span className="connection-state">
+                        {c.ok ? "Configured" : "Not configured"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {health?.missing?.length > 0 && (
+                  <div className="config-help">
+                    <h3>Set up on the server</h3>
+                    <p>
+                      Add the missing variables to Vercel preview settings or an
+                      ignored <code>lead-engine/.env.local</code>, then restart
+                      the dev server or redeploy. Keep credentials out of source
+                      control.
+                    </p>
+                    <p className="small">
+                      Missing: {health.missing.join(", ")}
+                    </p>
+                  </div>
+                )}
+                <form className="unlock-form" onSubmit={unlock}>
+                  <div>
+                    <h3>
+                      {connected
+                        ? "Workspace unlocked"
+                        : "Unlock this workspace"}
+                    </h3>
+                    <p>
+                      The workspace access key stays in this browser tab’s
+                      session. Your Gemini key stays on the server.
+                    </p>
+                  </div>
+                  {access && connected ? (
+                    <button
+                      className="button secondary"
+                      type="button"
+                      onClick={() => {
+                        try {
+                          sessionStorage.removeItem("prospect_access");
+                        } catch {}
+                        setAccess("");
+                        setConnected(false);
+                        setRemoteLeads([]);
+                        setRemoteRuns([]);
+                        setSelected(null);
+                      }}
+                    >
+                      Lock workspace
+                    </button>
+                  ) : (
+                    <>
+                      <label>
+                        Workspace access key
+                        <input
+                          type="password"
+                          autoComplete="current-password"
+                          required
+                          value={accessInput}
+                          onChange={(e) => setAccessInput(e.target.value)}
+                          aria-invalid={Boolean(authError)}
+                          aria-describedby={
+                            authError ? "unlock-error" : undefined
+                          }
+                        />
+                      </label>
+                      {authError && (
+                        <p
+                          id="unlock-error"
+                          role="alert"
+                          className="error-text"
+                        >
+                          {authError}
+                        </p>
+                      )}
+                      <button
+                        className="button primary"
+                        disabled={authBusy || !health?.secure}
+                      >
+                        <KeyRound size={16} />
+                        {authBusy ? "Checking…" : "Unlock workspace"}
+                      </button>
+                    </>
+                  )}
+                </form>
+              </TabsContent>
+            </Tabs>
+          </section>
+        </div>
+        <footer className="workspace-footer">
+          <span>Prospect for MyDigital-Metrics</span>
+          <span>
+            {storage ? "Shared records" : "Stored in this browser"} ·
+            Human-reviewed outreach
+          </span>
+          <a href="/licenses/" target="_blank" rel="noreferrer">
+            Component licenses
+            <ArrowUpRight size={12} />
+          </a>
+        </footer>
+      </main>
+      {selected && (
+        <Inspector
+          key={selected.id || selected.domain}
+          lead={selected}
+          claim={claims.find((c) => c.domain === selected.domain)}
+          onClose={() => setSelected(null)}
+          onSave={saveLead}
+        />
+      )}
+    </>
+  );
+}
+createRoot(document.getElementById("root")).render(
+  <MotionConfig reducedMotion="user">
+    <App />
+  </MotionConfig>,
+);

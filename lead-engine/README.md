@@ -37,11 +37,13 @@ Run `schema.sql` in Supabase. The database preserves leads across devices; the c
 ## Run and verify
 
 ```
-npm install
-npm run dev          # UI development; Vercel API endpoints not included
+npm ci
+npm run dev          # frontend + real local Vercel-compatible API handlers
 npm test             # offline unit tests for grounded search parsing and workflow
 npm run build        # production frontend build
-vercel dev           # frontend + APIs with local env configuration
+npm run test:browser # desktop/phone workflow and accessibility checks
+npm run preview      # built frontend + same local API handlers
+vercel dev           # optional Vercel runner
 ```
 
 ## Limitations before selling
@@ -56,3 +58,15 @@ vercel dev           # frontend + APIs with local env configuration
 ## Stack
 
 React + Vite + Framer Motion + Lucide, Vercel functions, Gemini 2.5 Flash with Google Search grounding, optional Supabase + Vercel cron. Third-party design pattern attribution and visual rules are in `DESIGN.md`.
+
+## Workbench rebuild and preview
+
+The UI now centers the saved brief, shortlist, research provenance and human review. See `DESIGN.md`, `THIRD_PARTY.md` and `QA_REPORT.md`. `npm run dev` serves the app and `/api/*` through `dev/api-plugin.js`, which calls the actual serverless handlers. Ignored `.env.local` is read server-side only; do not prefix secret names with `VITE_`. Restart after changing server variables. Vercel deployments continue to use the original `api/` handlers.
+
+**Keys already configured in Vercel are not automatically available in Codex Cloud. Never add them to GitHub.** Test deployed sourcing on an authenticated Vercel preview, or supply local server bindings securely. Browser tests use labeled synthetic `.test` fixtures; passing them does not prove provider access.
+
+Browser tests expect Chromium at `/usr/bin/chromium` in this cloud image. Override `PLAYWRIGHT_CHROMIUM_EXECUTABLE` for another installation. Run `npx playwright install chromium` on machines without a browser and point the override at the installed binary.
+
+The shadcn MCP configuration is project-local in `.codex/config.toml`. UI UX Pro Max CLI is installed under `/workspace/.local`; use `PATH=/workspace/.local/bin:$PATH` in this cloud machine. Taste, Impeccable, Hallmark and UI UX Pro Max are installed in this project's `.agents/skills/`. Start Codex from `lead-engine/` to load the project configuration. OpenDesign is a separate development tool outside this checkout; it is not a Prospect runtime dependency.
+
+To create a Vercel preview with deployment access, link this directory to the existing `mydigital-lead-engine` project, then run `vercel deploy` without `--prod`. Keep the root Marginline project and production domain untouched. No production deployment was performed during this rebuild.

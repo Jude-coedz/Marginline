@@ -1,22 +1,15 @@
-# Prospect v3 — design contract
+# Prospect — evidence-first research workbench
 
-## Product experience
-This is a prospect-sourcing workbench, not a CRM dashboard. The first usable action is **Find prospects**, with only industry and market inputs. The output is verified business websites and a review drawer. No fabricated progress, prospect lists, customer logos or vanity metrics.
+The operator's question is: which businesses deserve a human review, and what supports that decision? The core artifact is the shortlist, not an overview dashboard.
 
-## Primary style
-- **Editorial utility:** natural-paper background, generous typographic contrast, crisp hairlines, flat lead tables.
-- **One expressive canvas:** deep-green signal/radar diagram representing discovery → checking → review. Decorative motion only while a run is actually ongoing.
-- **Color discipline:** `#f7f7f4` paper, `#18221f` text, `#284f43` active green, `#d2f99a` highlight on the dark canvas. No purple gradients, floating stock cards, glassmorphism or icon-badge grids.
-- **Fonts:** Manrope display, DM Sans body, tabular aligned operational data.
-- **Layout:** three clearly distinguished zones — brief, shortlist, lead inspector. The shortlist is the product, not a CTA teaser.
+The fixed brief sits beside a flat research queue on desktop. Discovery, website checks and human review are an explanatory protocol, never simulated live progress. Workspace tabs switch between shortlist, run provenance and configuration. The prospect inspector keeps website observations separate from Gemini suggestions and the operator's outreach draft.
 
-## Third-party implementation references actually used
-- React Bits: adapted SpotlightCard on the action canvas, and StatusMark status glyph. See `src/components/SpotlightCard.jsx` and `src/components/StatusMark.jsx` (MIT). Source: DavidHDev/react-bits.
-- Canvas UI: adapted IntersectionObserver Reveal pattern. See `src/components/Reveal.jsx` (MIT). Source: DavidHDev/canvas-ui.
-- Framer Motion: panel overlays, transitions between results and run history, staggered lead rows; all respect reduced-motion.
-- taste-skill / `references/app-screens.md`: colors on data, avoid generic KPI cards, no hero-size application headers or needless icons, use honest empty states.
-- Impeccable `distill.md` and Hallmark anti-patterns: one primary action, less nesting, truthful copy, consistent tokens.
-- Awesome Design MD: studied Linear and Mercury design systems; using restraint and component polish rather than copying their proprietary visual marks.
+On phones, the saved brief collapses to segment, market and the research action. Edit reveals native select controls; the protocol is hidden unless a run needs attention. Tabs, filters and company rows use the full width. Review opens a native modal dialog with focus containment, Escape, focus restoration and an unsaved-edit warning. Save locks its editable fields until completion.
 
-## Constraints
-Be visually distinctive but easy for a sales operator to use. Animations must be purposeful, never prevent interaction or cause unwanted shifts. Re-check at 375, 768 and 1440 CSS pixels. Subsequent MD files supplied by the user will refine this contract.
+Paper `#f7f7f4`, white surfaces, ink `#18221f`, green `#284f43`, muted text `#626c65`. Green identifies actions and positive evidence; amber means configuration/verification is pending, red identifies failures. Keep surfaces flat with fine borders. No marketing hero, navigation sidebar, vanity KPI tiles, fake radar signals or decorative motion. The shortlist is visible from the first desktop viewport.
+
+Manrope 500/600 for titles, DM Sans 400–700 for controls/data. Fonts ship locally. Tokens are in `src/tokens.css`; content/control typography stays fixed in rem units. Motion is limited to state feedback; reduced motion disables transitions and the Spotlight response. Native controls retain visible focus. CSV values are escaped against spreadsheet formulas.
+
+Actual React Bits SpotlightCard and Canvas UI/Base UI tabs are integrated. Their dependencies, exact upstream revisions and current licenses are documented in THIRD_PARTY.md. Skills inform design decisions; they are not described as runtime component dependencies.
+
+Visual evidence is in `/workspace/artifacts/prospect/after/`. Empty states use the real unconfigured local backend. Populated and failure captures are labeled synthetic automated QA. Neither source nor screenshots contain invented prospects presented as live results.
