@@ -1,29 +1,22 @@
-# Prospect — product-specific design contract
+# Prospect v3 — design contract
 
-## North star
-A **calm research workbench** instead of an agency admin dashboard. The information is the work: a targeting brief, live run state, verifiable prospects and a review drawer. Premium means legible, precise, human-scaled, and useful.
+## Product experience
+This is a prospect-sourcing workbench, not a CRM dashboard. The first usable action is **Find prospects**, with only industry and market inputs. The output is verified business websites and a review drawer. No fabricated progress, prospect lists, customer logos or vanity metrics.
 
-## References and decisions
-- Taste-skill `references/app-screens.md`: color goes on data not chrome; no dashboard-KPI tile grid; quiet borders, no fake metrics; one-click primary job.
-- Hallmark `references/anti-patterns.md`: remove purple gradient hero, three equal feature cards, card-in-card, tinted icon tiles and invented statistics.
-- Impeccable `distill.md`: progressive disclosure; a single primary action. Evidence and outreach editing only appear in the prospect drawer.
-- Emil Kowalski motion-performance: animate opacity / transform, cap list staggering and respect reduced-motion.
-- UI UX Pro Max: deliberate component roles, typography, accessibility, responsive grids.
-- VoltAgent DESIGN.md patterns: Linear's information hierarchy and restrained accent, Mercury's less-angular controls. Not a pixel copy of either brand.
-- React Bits / GSAP / Canvas UI: audited for expressive effects, but **not installed unnecessarily**. WebGL and decorative backgrounds undermine this high-utility workbench; Framer Motion is used for state changes instead.
-- Open Design: clear reference lock, not template cloning.
+## Primary style
+- **Editorial utility:** natural-paper background, generous typographic contrast, crisp hairlines, flat lead tables.
+- **One expressive canvas:** deep-green signal/radar diagram representing discovery → checking → review. Decorative motion only while a run is actually ongoing.
+- **Color discipline:** `#f7f7f4` paper, `#18221f` text, `#284f43` active green, `#d2f99a` highlight on the dark canvas. No purple gradients, floating stock cards, glassmorphism or icon-badge grids.
+- **Fonts:** Manrope display, DM Sans body, tabular aligned operational data.
+- **Layout:** three clearly distinguished zones — brief, shortlist, lead inspector. The shortlist is the product, not a CTA teaser.
 
-## Tokens
-- Canvas `#f8f8f5`; panel `#e9ede6`; ink `#222820`; muted `#71786e`; border `#dcdfd7`; primary action `#2a5f45`.
-- Type: Manrope for headlines and action structure, DM Sans for reading, IBM Plex Mono for process metadata.
-- Controls: 7px primary radius, modest optical hierarchy, green exclusively for active actions and verified signals.
-- Motion: sheet spring transition, 200–450ms reveals, reduced-motion fallback. No animation on every statistic or constantly moving UI.
-- Interaction hierarchy: **Run prospect search** is the primary CTA. Review list is the body. Configuration is a drawer, not the main page.
+## Third-party implementation references actually used
+- React Bits: adapted SpotlightCard on the action canvas, and StatusMark status glyph. See `src/components/SpotlightCard.jsx` and `src/components/StatusMark.jsx` (MIT). Source: DavidHDev/react-bits.
+- Canvas UI: adapted IntersectionObserver Reveal pattern. See `src/components/Reveal.jsx` (MIT). Source: DavidHDev/canvas-ui.
+- Framer Motion: panel overlays, transitions between results and run history, staggered lead rows; all respect reduced-motion.
+- taste-skill / `references/app-screens.md`: colors on data, avoid generic KPI cards, no hero-size application headers or needless icons, use honest empty states.
+- Impeccable `distill.md` and Hallmark anti-patterns: one primary action, less nesting, truthful copy, consistent tokens.
+- Awesome Design MD: studied Linear and Mercury design systems; using restraint and component polish rather than copying their proprietary visual marks.
 
-## Forbidden design tells
-- No generic navbar of 6 features, multi-column KPI cards, gradient backgrounds, fake 92% scores, stock art, glassmorphism, glowing orbs, hard-to-read 11px primary UI, or nested decorative cards.
-- No microanimations on idle and no motion that delays basic tasks.
-- No fabricated testimonials, customer revenue figures or inaccurate AI-made business insights.
-
-## Acceptance criteria
-The first screen is usable at 1440px and 390px; the primary action is visible without scrolling on desktop; all setup failures are explanatory; run results represent real backend data and evidence; the user can inspect and edit a message without having to switch to another page.
+## Constraints
+Be visually distinctive but easy for a sales operator to use. Animations must be purposeful, never prevent interaction or cause unwanted shifts. Re-check at 375, 768 and 1440 CSS pixels. Subsequent MD files supplied by the user will refine this contract.
