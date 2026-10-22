@@ -1,0 +1,44 @@
+'use strict';
+const dns=require('node:dns').promises;const net=require('node:net');
+const SEARCH_HOST='https://api.search.brave.com/res/v1/web/search';
+const BAD_HOSTS=['shopify.com','google.com','facebook.com','instagram.com','linkedin.com','amazon.com','amazon.co.uk','yelp.com','reddit.com','pinterest.com','tiktok.com','youtube.com','etsy.com','ebay.com','wikipedia.org','trustpilot.com','crunchbase.com','businesswire.com','prnewswire.com','theguardian.com','forbes.com','vogue.com','medium.com','substack.com','globenewswire.com'];
+function domainOf(raw){try{const u=new URL(raw);if(!['https:','http:'].includes(u.protocol))return null;const h=u.hostname.toLowerCase().replace(/^www\./,'');if(!h.includes('.')||net.isIP(h)||h.endsWith('.local')||h==='localhost'||!/^[a-z0-9.-]+$/.test(h)||BAD_HOSTS.some(d=>h===d||h.endsWith('.'+d)))return null;return h;}catch{return null;}}
+function rejectIp(ip){if(net.isIP(ip)===4){let a=ip.split('.').map(Number);return a[0]===0||a[0]===10||a[0]===127||a[0]>=224||(a[0]===169&&a[1]===254)||(a[0]===172&&a[1]>=16&&a[1]<=31)||(a[0]===192&&a[1]===168)||(a[0]===100&&a[1]>=64&&a[1]<=127)||(a[0]===198&&[18,19].includes(a[1]));}if(net.isIP(ip)===6){const x=ip.toLowerCase();return x==='::'||x==='::1'||x.startsWith('fc')||x.startsWith('fd')||x.startsWith('fe8')||x.startsWith('fe9')||x.startsWith('fea')||x.startsWith('feb')||x.startsWith('::ffff:');}return true;}
+async function publicHostname(host){const resolved=await dns.lookup(host,{all:true});if(!resolved.length||resolved.some(x=>rejectIp(x.address)))throw Error('Website address is not public');}
+function clean(s){return String(s||'').replace(/<[^>]+>/g,' ').replace(/&(?:amp|quot|nbsp|lt|gt);/gi,' ').replace(/\s+/g,' ').trim().slice(0,260);}
+function meta(html,key){const tags=html.match(/<meta\b[^>]+>/gi)||[];for(const t of tags){if(new RegExp(`(?:name|property)=["']${key}["']`,'i').test(t))return clean((t.match(/content=["']([^"']*)["']/i)||[])[1]||'');}return '';}
+function parseHomepage(html,url){const text=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,12000);
+ const title=clean((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]);const description=meta(html,'description')||meta(html,'og:description');
+ const h1=clean((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)||[])[1]);
+ return {url,title,description,h1,shopify:/cdn\.shopify\.com|Shopify\.theme|myshopify\.com|shopify-section|shopify-features|shopify-payment-button/i.test(html),productLinks:/href=["'][^"']*\/products?\//i.test(html),newsletter:/klaviyo-form|mailchimp|omnisend|newsletter|<input[^>]+type=["']email["']/i.test(html),contact:/href=["'][^"']*(contact|inquiry|enquiry)/i.test(html),subscription:/\bsubscription|subscribe and save|replenishment\b/i.test(text),body:clean(text.slice(0,1200)),checkedAt:new Date().toISOString()};
+}
+async function cappedHtml(r,max=380000){if(!r.ok)throw Error('Website returned HTTP '+r.status);if(!/text\/html/i.test(r.headers.get('content-type')||''))throw Error('Website did not return HTML');const reader=r.body?.getReader();if(!reader)throw Error('Empty response');let chunks=[],bytes=0;try{while(true){const x=await reader.read();if(x.done)break;bytes+=x.value.length;if(bytes>max)break;chunks.push(x.value);}}finally{reader.cancel().catch(()=>{});}return Buffer.concat(chunks).toString('utf8');}
+async function auditDomain(domain){const host=domainOf('https://'+domain);if(!host)throw Error('Invalid business website');await publicHostname(host);let u=new URL('https://'+host+'/'),r;
+ for(let i=0;i<3;i++){await publicHostname(u.hostname);r=await fetch(u,{redirect:'manual',signal:AbortSignal.timeout(7000),headers:{'user-agent':'Mozilla/5.0 (compatible; ProspectResearch/2.0; public-homepage-check)','Accept':'text/html'}});if(r.status<300||r.status>=400)break;const next=new URL(r.headers.get('location')||'/',u);if(next.protocol!=='https:'||next.port||next.hostname.replace(/^www\./,'')!==host)throw Error('Website redirected to another domain');u=next;if(i===2)throw Error('Too many redirects');}
+ return parseHomepage(await cappedHtml(r),u.href);
+}
+const SECTORS={beauty:{label:'Beauty & skincare',term:'skincare OR beauty OR cosmetics'},wellness:{label:'Health & wellness',term:'wellness OR supplements OR self care'},dental:{label:'Dental & oral care',term:'oral care OR toothpaste OR dental products'},fashion:{label:'Fashion & accessories',term:'fashion boutique OR clothing brand'},home:{label:'Home & lifestyle',term:'homeware OR home decor OR candles'}};
+const REGIONS={uk:{label:'United Kingdom',suffix:'site:.co.uk'},us:{label:'United States',suffix:'site:.com'},ca:{label:'Canada',suffix:'site:.ca'}};
+function brief(input){const sector=SECTORS[input?.sector]?input.sector:'beauty';const region=REGIONS[input?.region]?input.region:'uk';return {sector,region,sectorLabel:SECTORS[sector].label,regionLabel:REGIONS[region].label};}
+function searches(b){const term=SECTORS[b.sector].term,site=REGIONS[b.region].suffix;return [
+  `(${term}) direct to consumer Shopify store ${site} -site:shopify.com -site:amazon.com`,
+  `(${term}) independent ecommerce brand online shop ${site} -site:shopify.com -site:etsy.com`,
+ ];}
+async function braveSearch(query,count=15){if(!process.env.BRAVE_SEARCH_API_KEY)throw Error('Discovery requires a Brave Search API key');const u=new URL(SEARCH_HOST);u.searchParams.set('q',query);u.searchParams.set('count',String(Math.min(20,Math.max(1,count))));u.searchParams.set('safesearch','moderate');const r=await fetch(u,{headers:{'X-Subscription-Token':process.env.BRAVE_SEARCH_API_KEY,'Accept':'application/json'},signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error(`Search API returned ${r.status}`);const data=await r.json();return (data.web?.results||[]).map(x=>({domain:domainOf(x.url||''),name:clean(x.title||''),snippet:clean(x.description||''),sourceUrl:x.url||''})).filter(x=>x.domain);}
+function companyName(title,domain){const titlePrefix=String(title||'').split(/\s+[\-|•|]\s+/)[0].replace(/\b(Home|Official Site|Shop Now|Buy Online)\b/gi,'').trim();return titlePrefix&&titlePrefix.length<65?titlePrefix:domain.split('.')[0].replace(/[-_]/g,' ').replace(/\b\w/g,a=>a.toUpperCase());}
+function scoreCandidate(a,b){const observed=[];let score=0;const evidence=[];
+ if(a.shopify){score+=42;observed.push('Shopify storefront detected');evidence.push({label:'Shopify technology marker present',source:a.url});}
+ else observed.push('Shopify not confirmed');
+ if(a.productLinks){score+=18;observed.push('Product catalogue links found');evidence.push({label:'Product pages linked from homepage',source:a.url});}
+ if(a.newsletter){score+=8;observed.push('Email capture signal found');evidence.push({label:'Email capture or newsletter signal',source:a.url});}
+ if(a.contact){score+=6;observed.push('Contact pathway linked');}
+ if(a.subscription){score+=6;observed.push('Subscription language on homepage');}
+ if(a.title){score+=8;observed.push('Page title present');}if(a.description){score+=8;observed.push('Search description present');}
+ const qualification=score>=68&&a.shopify?'strong':score>=42?'review':'unverified';
+ const reason=a.shopify&&a.productLinks?'Shopify-backed consumer storefront with visible product catalogue':a.shopify?'Shopify signal detected; verify fit manually':'Public website found; Shopify relationship needs confirmation';
+ return {score,qualification,reason,observed,evidence,homepage:a.url,scanned_at:a.checkedAt,shopify:a.shopify,sector:b.sectorLabel,region:b.regionLabel};
+}
+function draft(lead){const name=lead.name||'your team';const proof=lead.shopify?'your Shopify storefront':'your online store';return {subject:`A quick idea for ${name}`,body:`Hi ${name} team,\n\nI came across ${proof} while researching independent ${lead.sector?.toLowerCase()||'ecommerce'} brands.\n\nI work with MyDigital-Metrics, helping commerce teams improve the systems behind customer acquisition and conversion. Would it be useful if I shared two practical ideas tailored to your existing setup?\n\nBest,\nMyDigital-Metrics`};}
+async function gather(input){const b=brief(input),queries=searches(b),results=[];for(const q of queries){results.push(...await braveSearch(q,15));}const unique=[...new Map(results.map(x=>[x.domain,x])).values()];return {brief:b,queries,candidates:unique.slice(0,16)};}
+async function limitedMap(items,worker,max=4){const out=new Array(items.length);let index=0;await Promise.all(Array.from({length:Math.min(max,items.length)},async()=>{for(;;){let i=index++;if(i>=items.length)return;try{out[i]={value:await worker(items[i])};}catch(e){out[i]={error:e.message||String(e)};}}}));return out;}
+module.exports={domainOf,rejectIp,parseHomepage,brief,searches,scoreCandidate,draft,auditDomain,braveSearch,gather,limitedMap,companyName};

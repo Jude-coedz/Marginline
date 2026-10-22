@@ -1,39 +1,70 @@
-# MyDigital-Metrics Lead Engine
+# Prospect · MyDigital-Metrics
 
-A **functional, human-approved lead-research and outreach workflow** for MyDigital-Metrics. This project is a separate prototype branch of the earlier Marginline repository and does not change its original live demo.
+**Prospect** is a small, client-facing discovery automation, deliberately not another CRM dashboard. It finds businesses through a live search provider, validates publicly observable commerce signals, ranks evidence and puts the results in a reviewable shortlist. It runs on demand or daily without manual website entry. It **does not automatically email people** or claim that detecting Shopify equals sales readiness.
 
-## What works
+## What changed from the previous demo
 
-- **Discover** public business listings from OpenStreetMap (no API key) or Brave Search (requires `BRAVE_SEARCH_API_KEY`). The former discovers physical retailers and may be a poor fit for Shopify; both sources are explicitly unverified candidates.
-- **Import** a batch of company domains manually, deduplicated by canonical hostname.
-- **Audit** public homepages server-side; detect Shopify markers, product links, basic capture signals and simple SEO metadata. Every check records source URL and timestamp. Unobserved signals are never claimed as definitive problems.
-- **Qualify** leads with a transparent, deterministic scoring model and evidence list.
-- **Draft** a contextual first-touch email, revise it in the UI, and copy it. Sending is deliberately manual and approval-based.
-- **Track** a local browser pipeline through contacted, replied, meeting and won; export CSV and JSON and reimport JSON.
+- Replaced the OpenStreetMap default (unsuitable for national Shopify prospecting) with actual web-wide search via the Brave Search API.
+- Added a scheduled discovery worker, two web queries per run, canonical-domain dedupe, bounded parallel homepage audits, database persistence, and run audit logs.
+- Removed the generic multi-page dashboard, fake decorative stats and imported example leads. The interface is one path: **search brief → run → shortlist → human-approved outreach**.
+- Added a repeatable daily schedule. The most recent **manual run** saves the targeting brief; the scheduler uses that brief.
+- Added protected endpoints and a connection-status page that clearly says when a service is missing.
+- Added research limitations and provenance links. Scores represent website signals, not buying intent.
 
-## Deploy
+## Stack
 
-Vercel supports static HTML plus the single Node serverless handler `api/research.js`. No build command or runtime npm dependencies are required. Deploy the branch `lead-engine-mvp`, or copy these files to a new Vercel project. Configure `BRAVE_SEARCH_API_KEY` if you want web-index discovery. Without that key, manual domain import and OpenStreetMap discovery remain available.
+Vite + React + Framer Motion + Lucide; Vercel Node.js Functions; Brave Search API; Supabase Postgres REST.
 
-Local static preview: `python3 -m http.server 4173` (UI only; `/api/research` requires `vercel dev` or a deployment). Run `node --test tests/engine.test.cjs` for engine and scanner tests.
+## Setup: 4 necessary credentials
 
-## Limits and compliance
+1. **Brave Search API**: create an API key at https://api-dashboard.search.brave.com/ . Configure `BRAVE_SEARCH_API_KEY` in Vercel. The pricing page may require card verification; check current usage and pricing before selling the service.
+2. **Supabase**: create a new project at https://supabase.com and run [`schema.sql`](./schema.sql) in SQL Editor. Set `SUPABASE_URL` and server-only `SUPABASE_SERVICE_ROLE_KEY` in Vercel. Do **not** use the anon key here. The app's client never sees the service role key.
+3. **Workspace access**: set a strong `APP_ACCESS_KEY` in Vercel. Enter the code once in the app's Configuration drawer. This is a single-user pilot mechanism, **not a production multi-tenant authentication system**.
+4. **Scheduler**: set a strong `CRON_SECRET` in Vercel. Vercel invokes `GET /api/run` daily at 08:00 UTC with `Authorization: Bearer <CRON_SECRET>`. The app checks this before running. Hobby scheduling timing may be imprecise. The last manual run's sector and region are used as the daily defaults.
 
-- **This is research automation, not an email sender or a guarantee of sales.** It does not fetch private contacts or send messages.
-- The browser stores pipeline data in `localStorage`; it is not shared across devices or staff and can be lost when site data is cleared. Use JSON export for backup. Production needs authenticated database and RBAC.
-- Shopify markers are indicators, not proof of merchant revenue or willingness to buy.
-- Absence of a newsletter form in fetched homepage HTML is **not** proof no lead-capture flow exists; visual verification is required.
-- Public data usage must respect source terms and privacy/anti-spam rules, including GDPR/PECR (UK), CAN-SPAM (US) and CASL (Canada) as applicable. Human review is required before outreach.
-- Discovery on public Overpass infrastructure is rate-limited by that service. Do not run intensive crawling; use a licensed data provider for production-scale search.
-- API restricts scans to one public HTTPS homepage per domain and rejects direct private/localhost addresses; additional network-level egress policies and proper rate limiting are necessary before exposing the scanner broadly.
+Then redeploy **the new `lead-engine-v2` branch** with the Vercel project's **root directory set to `lead-engine`**, framework Vite. Runtime secrets are only read by API functions. `/api/status` exposes availability flags, never secret values.
 
-## Next production steps
+If credentials are missing, the app will not fabricate results. It displays setup guidance and descriptive errors.
 
-1. Test with 10–15 real midmarket prospects; manually review each factual claim.
-2. Validate Patricia's ideal customer profile and service offerings before changing scoring weights.
-3. Add permitted business data provider, authenticated Postgres/Supabase storage, owner assignment, opt-out tracking and suppression lists.
-4. Integrate a consent/compliance-reviewed sending system only after the lead quality and messaging are validated.
+### Environment variables
 
-## Starter research set
+```
+BRAVE_SEARCH_API_KEY=...
+SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=...
+APP_ACCESS_KEY=...
+CRON_SECRET=...
+```
 
-`starter-domains.txt` includes ten public Shopify skincare-store examples referenced in a September 2026 independent roundup. Treat these as **scanner test candidates**, not claims that their teams need services or are qualified leads. The scanner will surface currently observable signals; check any possible opportunity manually.
+An AI API key is **not needed** for discovery. `GEMINI_API_KEY` is optional/reserved; this version relies on inspectable rules and editable templates. The interface will show it as optional, not a running feature.
+
+### Start and tests
+
+```
+npm install
+npm run dev         # Vite interface only; APIs require Vercel
+npm test            # deterministic scanner, scoring and auth tests
+vercel dev          # complete local API workflow (requires env vars)
+```
+
+## Actual workflow
+
+1. Select a sector and target search market; click **Run prospect search**.
+2. The server issues two web-index searches, retrieves up to 16 unique candidate business domains, audits their public HTML and stores observable evidence and qualification score.
+3. Search results are deduplicated across runs by domain. Existing pipeline stages survive rescans.
+4. Results show where signals were observed. A detected Shopify marker is **not** evidence of sales growth opportunity, company location or unmet needs.
+5. The seller reviews sources, edits the outreach starter, chooses a pipeline stage and contacts prospects manually in their chosen compliant channel.
+6. A scheduled Vercel job repeats that same brief daily and records outcome counts. It does not send mail.
+
+## Commercial limitations and next iteration
+
+- Website scanners sometimes encounter bot protection and redirect rules. Failed scans are logged; a storefront is not claimed to be Shopify when it cannot be verified.
+- A search snippet or `.com` domain does not prove a company operates in the selected country. Target geography is **search context** and must be verified before outreach.
+- The browser-held access code, server-only service-role database access, and daily cron are suitable for a limited **pilot**, not a resale-grade multi-tenant product. Before selling as a hosted service, add Supabase Auth/SSO, tenant-scoped row security, team roles, proper job queue and retries, strong rate limiting, provider usage budgets, tenant-specific schedules, and opt-out/suppression handling.
+- Respect source terms, privacy laws, anti-spam rules and site access restrictions. Automated bulk emailing is intentionally disabled.
+- **Vercel Hobby is personal/non-commercial only.** Use a commercial plan/provider for paid service deployment.
+- Automated tests verify offline logic; actual end-to-end discovery **requires** configured Brave and Supabase credentials and a live test run. Do not report the source as production-ready until this is done.
+
+## Design system
+
+[`DESIGN.md`](./DESIGN.md) documents the reference-informed visual system: flat editorial workbench, typographic hierarchy, purposeful Framer Motion and no fictional performance metrics. Reference sources used include taste-skill app-screens, Hallmark's anti-pattern checks, Impeccable's distill rules, Emil Kowalski's motion-performance guidelines, UI UX Pro Max and the Linear / Mercury system analyses. The user-provided future design Markdown files should supersede these defaults.
