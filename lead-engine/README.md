@@ -1,6 +1,6 @@
 # Prospect v3 · MyDigital-Metrics
 
-A **real (human-reviewed) lead-research automation** built around Gemini 2.5 Flash with Google Search grounding. No Brave account or Brave credit card needed. A modern, restrained interface designed for sales operators rather than a generic dashboard.
+A **real (human-reviewed) lead-research automation** built around Gemini 3.8 Flash with Google Search grounding. No Brave account or Brave credit card needed. A modern, restrained interface designed for sales operators rather than a generic dashboard.
 
 ## Workflow
 
@@ -20,7 +20,7 @@ GEMINI_API_KEY=your_AI_Studio_key
 APP_ACCESS_KEY=a_long_random_workspace_password
 ```
 
-Redeploy and enter your workspace access key in **Settings**. `GEMINI_MODEL=gemini-2.5-flash` is the default; free-tier Google Search grounding for 2.5 Flash is documented by Google, with quota and geographic/account eligibility restrictions. Check the pricing page: https://ai.google.dev/gemini-api/docs/pricing
+Redeploy and enter your workspace access key in **Settings**. `GEMINI_MODEL=gemini-3.8-flash` is the default. Google returned this model as the replacement for 2.5 Flash, which is unavailable to new users. Your API project must have usable generation and Google Search grounding quota; do not assume a free tier supplies it. Check the pricing page: https://ai.google.dev/gemini-api/docs/pricing
 
 The Google search key is never placed in client JavaScript. The backend rejects ungrounded AI candidate lists. If a live search fails, the UI tells the operator why; it never replaces it with invented records.
 
@@ -57,7 +57,7 @@ vercel dev           # optional Vercel runner
 
 ## Stack
 
-React + Vite + Framer Motion + Lucide, Vercel functions, Gemini 2.5 Flash with Google Search grounding, optional Supabase + Vercel cron. Third-party design pattern attribution and visual rules are in `DESIGN.md`.
+React + Vite + Framer Motion + Lucide, Vercel functions, Gemini 3.8 Flash with Google Search grounding, optional Supabase + Vercel cron. Third-party design pattern attribution and visual rules are in `DESIGN.md`.
 
 ## Workbench rebuild and preview
 

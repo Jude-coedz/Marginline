@@ -109,7 +109,7 @@ test("Gemini discovery actually enables google_search and preserves provenance",
   process.env.GEMINI_API_KEY = "unit-test";
   try {
     const f = async (u, o) => {
-      assert.match(u, /gemini-2\.5-flash:generateContent/);
+      assert.match(u, /gemini-3\.8-flash:generateContent/);
       assert.equal(
         JSON.parse(o.body).tools[0].google_search.constructor,
         Object,
@@ -290,4 +290,8 @@ test("HTML size cap retains the first chunk even when the server streams a large
   );
   assert.equal(Buffer.byteLength(result), 100);
   assert.match(result, /<title>Test fixture/);
+});
+test('retired Gemini model errors identify the setting to correct',async()=>{
+ const old=process.env.GEMINI_API_KEY;process.env.GEMINI_API_KEY='unit-test';
+ try{await assert.rejects(()=>r.geminiSearch(r.brief({}),{fetcher:async()=>({ok:false,status:404,text:async()=>''})}),/GEMINI_MODEL/);}finally{old===undefined?delete process.env.GEMINI_API_KEY:process.env.GEMINI_API_KEY=old;}
 });

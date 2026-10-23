@@ -312,7 +312,7 @@ async function geminiSearch(b, { fetcher = fetch } = {}) {
     throw Error(
       "Gemini is not connected. Add GEMINI_API_KEY in Vercel environment settings.",
     );
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   if (!/^gemini-[a-z0-9.-]+$/.test(model))
     throw Error("Invalid Gemini model setting");
   const prompt = `Use Google Search NOW to research real ecommerce businesses. Find 8 to 12 currently operating independent ${SECTORS[b.sector].term} with an official direct-to-consumer online storefront in ${REGIONS[b.region].label}. Prefer small or mid-size brands; avoid directories, marketplaces, agencies, social media pages and articles.\nFor EACH company, verify the likely official website using web results. Do not guess domains; do not invent brands or assert Shopify without checking. If fewer than 8 qualify, return fewer. Output ONLY valid compact JSON in this shape: {"businesses":[{"name":"Business","website":"https://official-business-site.example","country":"${REGIONS[b.region].label}","description":"Brief factual product category"}]}. No Markdown. This is research data and will be validated independently. Search the web even if you know potential examples.`;
@@ -338,9 +338,11 @@ async function geminiSearch(b, { fetcher = fetch } = {}) {
     if (response.status === 401 || response.status === 403)
       msg =
         "Gemini API key is invalid or Google Search grounding is unavailable for this account.";
+    if (response.status === 404)
+      msg = "The configured Gemini model is unavailable. Set GEMINI_MODEL to a supported model in Vercel and redeploy.";
     if (response.status === 429)
       msg =
-        "Gemini quota or rate limit reached. Try a smaller run later or check your free-tier limits.";
+        "Gemini quota is exhausted or unavailable for this API project. Check usage and billing at https://ai.dev/rate-limit, then retry.";
     throw Error(msg + (response.status >= 500 ? " Try again." : ""));
   }
   const json = await response.json();
