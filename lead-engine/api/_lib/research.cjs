@@ -342,7 +342,7 @@ async function geminiSearch(b, { fetcher = fetch } = {}) {
       msg = "The configured Gemini model is unavailable. Set GEMINI_MODEL to a supported model in Vercel and redeploy.";
     if (response.status === 429)
       msg =
-        "Gemini quota is exhausted or unavailable for this API project. Check usage and billing at https://ai.dev/rate-limit, then retry.";
+        "Gemini rejected the Google Search discovery request with a quota or rate limit. Check Google Search grounding access and this model’s limits for the API key’s project at https://ai.dev/rate-limit. Ordinary Gemini chat may still work.";
     throw Error(msg + (response.status >= 500 ? " Try again." : ""));
   }
   const json = await response.json();
