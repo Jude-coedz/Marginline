@@ -1,15 +1,13 @@
 # Prospect — evidence-first research workbench
 
-The operator's question is: which businesses deserve a human review, and what supports that decision? The core artifact is the shortlist, not an overview dashboard.
+The operator chooses a segment and market, runs discovery, then reviews the shortlist and its evidence. The research toolbar spans the workspace with the primary Find prospects action on the right. There is no left sidebar or setup checklist in the working view. Shortlist and Run log are the only main tabs.
 
-The fixed brief sits beside a flat research queue on desktop. Discovery, website checks and human review are an explanatory protocol, never simulated live progress. Workspace tabs switch between shortlist, run provenance and configuration. The prospect inspector keeps website observations separate from Gemini suggestions and the operator's outreach draft.
+Workspace settings opens a focused dialog from the header. Access, shared storage verification and collapsed service details belong there. Lock workspace lives in the account menu. Provider configuration badges and raw environment variable names do not occupy the main screen. Configuration presence is distinct from verified provider or database access.
 
-On phones, the saved brief collapses to segment, market and the research action. Edit reveals native select controls; the protocol is hidden unless a run needs attention. Tabs, filters and company rows use the full width. Review opens a native modal dialog with focus containment, Escape, focus restoration and an unsaved-edit warning. Save locks its editable fields until completion.
+Paper `#f5f5f7`, white surfaces, ink `#1d1d1f`, green `#285244`. System typography uses Apple/Segoe fonts with locally shipped DM Sans as fallback. Shared tokens define control sizes, borders, radii, focus rings and muted text. Unused Manrope assets and decorative protocol elements were removed. Thin scrollbars preserve native scrolling.
 
-Paper `#f7f7f4`, white surfaces, ink `#18221f`, green `#284f43`, muted text `#626c65`. Green identifies actions and positive evidence; amber means configuration/verification is pending, red identifies failures. Keep surfaces flat with fine borders. No marketing hero, navigation sidebar, vanity KPI tiles, fake radar signals or decorative motion. The shortlist is visible from the first desktop viewport.
+Actual Canvas UI button, input, select and tabs source is adapted to React 18/Base UI and Prospect CSS. The custom menus support keyboard selection, focus and consistent selected states. React Bits SpotlightCard provides a restrained toolbar pointer response. Licenses and exact revisions are in THIRD_PARTY.md. Reduced motion disables transitions and effects.
 
-Manrope 500/600 for titles, DM Sans 400–700 for controls/data. Fonts ship locally. Tokens are in `src/tokens.css`; content/control typography stays fixed in rem units. Motion is limited to state feedback; reduced motion disables transitions and the Spotlight response. Native controls retain visible focus. CSV values are escaped against spreadsheet formulas.
+At phone widths the two selectors share a row; the action sits below, aligned right. Selection labels truncate consistently without changing control height. Settings, account menu, dropdowns and the review inspector share the same control system. Unsaved review edits open an accessible in-app discard confirmation; cancel preserves edits. Saving disables editable fields until completion.
 
-Actual React Bits SpotlightCard and Canvas UI/Base UI tabs are integrated. Their dependencies, exact upstream revisions and current licenses are documented in THIRD_PARTY.md. Skills inform design decisions; they are not described as runtime component dependencies.
-
-Visual evidence is in `/workspace/artifacts/prospect/after/`. Empty states use the real unconfigured local backend. Populated and failure captures are labeled synthetic automated QA. Neither source nor screenshots contain invented prospects presented as live results.
+The prospect inspector separates website observations, Gemini suggestions and human outreach drafts. No fabricated records or simulated research progress appear. Visual evidence lives in `/workspace/artifacts/prospect/after/`; populated test captures are explicitly synthetic QA.

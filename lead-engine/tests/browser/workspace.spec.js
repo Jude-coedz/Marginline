@@ -90,10 +90,15 @@ test("real local API reports missing bindings; setup and tabs are keyboard acces
   expect(unauthorized.status()).toBe(401);
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Prospect research", exact: true }),
+    page.getByRole("heading", {
+      name: "Find your next conversation.",
+      exact: true,
+    }),
   ).toBeVisible();
   await noOverflow(page);
-  const accessibility=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
   expect(accessibility.violations).toEqual([]);
   await page.screenshot({
     path: `/workspace/artifacts/prospect/after/${info.project.name}-empty.png`,
@@ -101,10 +106,11 @@ test("real local API reports missing bindings; setup and tabs are keyboard acces
   });
   await page.getByRole("button", { name: "Open workspace settings" }).click();
   await expect(
-    page.getByRole("heading", { name: "Research connections" }),
+    page.getByRole("heading", { name: "Workspace settings" }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "Connections" }).focus();
-  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("Escape");
+  await page.getByRole("tab", { name: /Shortlist/ }).focus();
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("tab", { name: /Run log/ })).toHaveAttribute(
     "aria-selected",
@@ -125,8 +131,8 @@ test("synthetic discovery, evidence, draft review, deduplication, export and foc
   });
   await page.goto("/");
   await expect(
-    page.getByText("Gemini configured", { exact: true }),
-  ).toBeVisible();
+    page.getByRole("button", { name: "Find prospects", exact: true }),
+  ).toBeEnabled();
   await page
     .getByRole("button", { name: "Find prospects", exact: true })
     .click();
@@ -154,12 +160,17 @@ test("synthetic discovery, evidence, draft review, deduplication, export and foc
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  const accessibility=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
   expect(accessibility.violations).toEqual([]);
   await expect(
     dialog.getByText("Synthetic AI suggestion", { exact: false }),
   ).toBeVisible();
-  await dialog.getByLabel("Review stage").selectOption("approved");
+  await dialog
+    .getByRole("combobox", { name: "Review stage", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Approved", exact: true }).click();
   await dialog
     .getByLabel("Private review notes")
     .fill("Reviewed synthetic evidence");
@@ -313,8 +324,8 @@ test("persisted run errors survive history refresh", async ({ page }) => {
   );
   await page.goto("/");
   await expect(
-    page.getByText("Gemini configured", { exact: true }),
-  ).toBeVisible();
+    page.getByRole("button", { name: "Find prospects", exact: true }),
+  ).toBeEnabled();
   await page
     .getByRole("button", { name: "Find prospects", exact: true })
     .click();
@@ -322,20 +333,204 @@ test("persisted run errors survive history refresh", async ({ page }) => {
     "Synthetic persistence failure",
   );
 });
-test("phone brief expands without horizontal overflow", async ({
+test("custom controls, menu placement and focused workspace layout", async ({
   page,
 }, info) => {
-  test.skip(info.project.name !== "mobile", "Phone-only layout interaction");
+  await mockConfigured(page);
   await page.goto("/");
-  const edit = page.getByRole("button", { name: "Edit", exact: true });
-  await expect(edit).toBeVisible();
-  await edit.click();
-  await expect(page.getByLabel("Business segment")).toBeVisible();
-  await page.getByLabel("Business segment").selectOption("home");
-  await page.getByRole("button", { name: "Done", exact: true }).click();
-  await expect(page.getByLabel("Business segment")).not.toBeVisible();
-  await expect(page.locator(".brief-summary")).toContainText(
-    "Home & lifestyle",
-  );
+  const run = page.getByRole("button", { name: "Find prospects", exact: true });
+  await expect(run).toBeEnabled();
+  await expect(
+    page.getByText("Gemini configured", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "Connections" })).toHaveCount(0);
+  const segment = page.getByRole("combobox", {
+    name: "Business segment",
+    exact: true,
+  });
+  await segment.click();
+  await page.screenshot({
+    path: `/workspace/artifacts/prospect/after/${info.project.name}-dropdown.png`,
+    fullPage: true,
+  });
+  await page
+    .getByRole("option", { name: "Home & lifestyle", exact: true })
+    .click();
+  await expect(segment).toContainText("Home & lifestyle");
+  await segment.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(segment).toBeFocused();
+  const trigger = await segment.boundingBox(),
+    action = await run.boundingBox();
+  if (info.project.name === "desktop")
+    expect(action.x).toBeGreaterThan(trigger.x + trigger.width);
+  await expect(
+    page.getByRole("menuitem", { name: "Lock workspace" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Workspace menu", exact: true })
+    .click();
+  await expect(
+    page.getByRole("menuitem", { name: "Lock workspace" }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `/workspace/artifacts/prospect/after/${info.project.name}-account-menu.png`,
+    fullPage: true,
+  });
+  await page.getByRole("menuitem", { name: "Workspace settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Workspace settings" });
+  await expect(settings).toBeVisible();
+  await expect(settings).toHaveCSS("opacity", "1");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(
+    settings.getByRole("button", { name: "Lock workspace", exact: true }),
+  ).toHaveCount(0);
+  const a11y = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(a11y.violations).toEqual([]);
+  await page.screenshot({
+    path: `/workspace/artifacts/prospect/after/${info.project.name}-settings.png`,
+    fullPage: false,
+  });
+  await page.keyboard.press("Escape");
+  await expect(settings).not.toBeVisible();
   await noOverflow(page);
+});
+test("shared storage is only marked verified after the protected schema check", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    sessionStorage.setItem("prospect_access", "synthetic-access"),
+  );
+  await page.route("**/api/status", (route) =>
+    route.fulfill({
+      json: {
+        service: "Prospect",
+        search: true,
+        secure: true,
+        storage: true,
+        schedule: false,
+        missing: [],
+        testFixture: true,
+      },
+    }),
+  );
+  await page.route("**/api/leads", (route) =>
+    route.fulfill({ json: { stored: true, leads: [], runs: [] } }),
+  );
+  let checks = 0;
+  await page.route("**/api/storage", (route) => {
+    checks++;
+    return route.fulfill({
+      json: { configured: true, verified: true, mode: "shared" },
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open workspace settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Workspace settings" });
+  await expect(
+    settings.getByText("Connection added", { exact: true }),
+  ).toBeVisible();
+  await settings.getByRole("button", { name: "Verify storage" }).click();
+  await expect(settings.getByText("Verified", { exact: true })).toBeVisible();
+  expect(checks).toBe(1);
+});
+test("unsaved reviews use an accessible in-app confirmation and preserve edits when canceled", async ({
+  page,
+}, info) => {
+  await mockConfigured(page);
+  await page.route("**/api/run", (route) => route.fulfill({ json: payload }));
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Find prospects", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Review Synthetic QA fixture" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Synthetic QA fixture" });
+  await dialog
+    .getByLabel("Private review notes")
+    .fill("Unsaved synthetic review");
+  await dialog.getByRole("button", { name: "Close prospect review" }).click();
+  const confirm = page.getByRole("alertdialog");
+  await expect(confirm).toBeVisible();
+  await page.screenshot({
+    path: `/workspace/artifacts/prospect/after/${info.project.name}-discard-confirmation.png`,
+    fullPage: false,
+  });
+  await confirm.getByRole("button", { name: "Keep editing" }).click();
+  await expect(confirm).not.toBeVisible();
+  await expect(dialog.getByLabel("Private review notes")).toHaveValue(
+    "Unsaved synthetic review",
+  );
+  await dialog.getByRole("button", { name: "Close prospect review" }).click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Discard changes" })
+    .click();
+  await expect(dialog).not.toBeVisible();
+});
+
+test("locking workspace ignores a late shared-storage refresh", async ({
+  page,
+}) => {
+  await mockConfigured(page);
+  await page.route("**/api/status", (route) =>
+    route.fulfill({
+      json: {
+        service: "Prospect",
+        search: true,
+        secure: true,
+        storage: true,
+        schedule: false,
+        missing: [],
+      },
+    }),
+  );
+  await page.route("**/api/leads", (route) =>
+    route.fulfill({ json: { stored: true, leads: [fixture], runs: [] } }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Review Synthetic QA fixture" }),
+  ).toBeVisible();
+  let respond;
+  let requested;
+  const started = new Promise((resolve) => {
+    requested = resolve;
+  });
+  await page.route("**/api/leads", async (route) => {
+    requested();
+    await new Promise((resolve) => {
+      respond = resolve;
+    });
+    await route.fulfill({ json: { stored: true, leads: [fixture], runs: [] } });
+  });
+  await page.getByRole("tab", { name: "Run log" }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await started;
+  const delivered = page.waitForResponse("**/api/leads");
+  try {
+    await page.getByRole("button", { name: "Workspace menu" }).click();
+    await page.getByRole("menuitem", { name: "Lock workspace" }).click();
+  } finally {
+    respond();
+  }
+  await (await delivered).finished();
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await page.getByRole("tab", { name: /Shortlist/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Review Synthetic QA fixture" }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() => sessionStorage.getItem("prospect_access")),
+  ).toBeNull();
 });

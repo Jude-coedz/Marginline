@@ -2,10 +2,12 @@
 import status from "../api/status.js";
 import run from "../api/run.js";
 import leads from "../api/leads.js";
+import storage from "../api/storage.js";
 const handlers = {
   "/api/status": status,
   "/api/run": run,
   "/api/leads": leads,
+  "/api/storage": storage,
 };
 export default function apiPlugin() {
   return {
@@ -42,13 +44,11 @@ async function serve(req, res, next) {
     req.query = Object.fromEntries(url.searchParams);
     await handler(req, res);
   } catch (error) {
-    res
-      .status(error instanceof SyntaxError ? 400 : 500)
-      .json({
-        error:
-          error instanceof SyntaxError
-            ? "Invalid JSON request"
-            : "Local API request failed",
-      });
+    res.status(error instanceof SyntaxError ? 400 : 500).json({
+      error:
+        error instanceof SyntaxError
+          ? "Invalid JSON request"
+          : "Local API request failed",
+    });
   }
 }

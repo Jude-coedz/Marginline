@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, ArrowUpRight, Check, Copy, Save } from "lucide-react";
+import { Button, Input, SelectField } from "./Controls";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 import { STAGES, labelFor, dateLabel, safeLink } from "../lib";
 export function SourceLink({ href, children }) {
@@ -21,7 +23,8 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
     [body, setBody] = useState(lead.outreach_body || ""),
     [saving, setSaving] = useState(false),
     [feedback, setFeedback] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [discardOpen, setDiscardOpen] = useState(false);
   useEffect(() => {
     const previous = document.activeElement;
     dialog.current.showModal();
@@ -38,11 +41,9 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
     subject !== (lead.outreach_subject || "") ||
     body !== (lead.outreach_body || "");
   const close = () => {
-    if (
-      !saving &&
-      (!dirty || window.confirm("Discard unsaved review changes?"))
-    )
-      onClose();
+    if (saving) return;
+    if (dirty) setDiscardOpen(true);
+    else onClose();
   };
   const save = async () => {
     setSaving(true);
@@ -78,7 +79,8 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
       className="inspector"
       onCancel={(e) => {
         e.preventDefault();
-        if (!saving) close();
+        if (discardOpen) setDiscardOpen(false);
+        else if (!saving) close();
       }}
       onClick={(e) => {
         if (e.target === dialog.current && !saving) close();
@@ -88,14 +90,15 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
       <div className="inspector-inner">
         <header className="inspector-head">
           <span>Prospect review</span>
-          <button
+          <Button
+            variant="ghost"
             className="icon-button"
             aria-label="Close prospect review"
             disabled={saving}
             onClick={close}
           >
             <X />
-          </button>
+          </Button>
         </header>
         <div className="company-heading">
           <div className="company-letter">
@@ -162,10 +165,13 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
               </p>
               <label>
                 Subject
-                <input
+                <Input
                   disabled={saving}
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    setFeedback("");
+                  }}
                   maxLength={200}
                 />
               </label>
@@ -175,43 +181,47 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
                   disabled={saving}
                   rows={12}
                   value={body}
-                  onChange={(e) => setBody(e.target.value)}
+                  onChange={(e) => {
+                    setBody(e.target.value);
+                    setFeedback("");
+                  }}
                   maxLength={10000}
                 />
               </label>
-              <button
+              <Button
+                variant="secondary"
                 className="button secondary"
                 onClick={copy}
                 disabled={!body || saving}
               >
                 <Copy size={15} />
                 Copy draft
-              </button>
+              </Button>
             </section>
           </TabsContent>
         </Tabs>
         <section className="inspector-section review-fields">
-          <label>
-            Review stage
-            <select
-              disabled={saving}
-              value={stage}
-              onChange={(e) => setStage(e.target.value)}
-            >
-              {STAGES.map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            label="Review stage"
+            options={STAGES}
+            value={stage}
+            onChange={(value) => {
+              setStage(value);
+              setFeedback("");
+            }}
+            disabled={saving}
+            container={dialog}
+          />
           <label>
             Private review notes
             <textarea
               disabled={saving}
               rows={3}
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                setFeedback("");
+              }}
               maxLength={10000}
               placeholder="What makes this business a fit? What needs checking?"
             />
@@ -224,13 +234,38 @@ export default function Inspector({ lead, onClose, onSave, claim }) {
             </p>
           )}
           {feedback && <p role="status">{feedback}</p>}
-          <button className="button primary" disabled={saving} onClick={save}>
+          <Button
+            variant="primary"
+            className="button primary"
+            disabled={saving}
+            onClick={save}
+          >
             <Save size={16} />
             {saving ? "Saving…" : "Save review"}
-          </button>
+          </Button>
           <span>No automatic outreach</span>
         </footer>
       </div>
+      <AlertDialog.Root open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialog.Portal container={dialog}>
+          <AlertDialog.Backdrop className="confirm-backdrop" />
+          <AlertDialog.Popup className="confirm-panel">
+            <AlertDialog.Title>Discard this review?</AlertDialog.Title>
+            <AlertDialog.Description>
+              Your unsaved notes and draft edits will be lost. The saved
+              prospect will stay in your shortlist.
+            </AlertDialog.Description>
+            <div className="form-actions">
+              <AlertDialog.Close render={<Button variant="secondary" />}>
+                Keep editing
+              </AlertDialog.Close>
+              <Button variant="danger" onClick={onClose}>
+                Discard changes
+              </Button>
+            </div>
+          </AlertDialog.Popup>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </dialog>
   );
 }

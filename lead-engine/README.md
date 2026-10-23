@@ -61,7 +61,7 @@ React + Vite + Framer Motion + Lucide, Vercel functions, Gemini 3.8 Flash with G
 
 ## Workbench rebuild and preview
 
-The UI now centers the saved brief, shortlist, research provenance and human review. See `DESIGN.md`, `THIRD_PARTY.md` and `QA_REPORT.md`. `npm run dev` serves the app and `/api/*` through `dev/api-plugin.js`, which calls the actual serverless handlers. Ignored `.env.local` is read server-side only; do not prefix secret names with `VITE_`. Restart after changing server variables. Vercel deployments continue to use the original `api/` handlers.
+The UI centers the research toolbar, shortlist, research provenance and human review. Workspace settings opens from the header settings icon; Lock workspace is in the account menu. The protected GET `/api/storage` checks read access to all three required Supabase tables; it does not prove write durability. See `DESIGN.md`, `THIRD_PARTY.md` and `QA_REPORT.md`. `npm run dev` serves the app and `/api/*` through `dev/api-plugin.js`, which calls the actual serverless handlers. Ignored `.env.local` is read server-side only; do not prefix secret names with `VITE_`. Restart after changing server variables. Vercel deployments continue to use the original `api/` handlers.
 
 **Keys already configured in Vercel are not automatically available in Codex Cloud. Never add them to GitHub.** Test deployed sourcing on an authenticated Vercel preview, or supply local server bindings securely. Browser tests use labeled synthetic `.test` fixtures; passing them does not prove provider access.
 

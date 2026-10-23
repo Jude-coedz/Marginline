@@ -15,19 +15,19 @@ import {
   RefreshCw,
   Download,
   Check,
-  Globe2,
   ShieldCheck,
   Clock3,
   AlertCircle,
   ChevronRight,
   KeyRound,
-  Database,
   X,
-  SlidersHorizontal,
 } from "lucide-react";
 import SpotlightCard from "./components/vendor/SpotlightCard";
 import Inspector, { SourceLink } from "./components/Inspector";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/Tabs";
+import { Button, Input, SelectField } from "./components/Controls";
+import WorkspaceMenu from "./components/WorkspaceMenu";
+import SettingsPanel from "./components/SettingsPanel";
 import {
   SECTORS,
   REGIONS,
@@ -37,12 +37,10 @@ import {
   mergeLeads,
   exportLeads,
 } from "./lib";
-import "@fontsource/dm-sans/400.css";
-import "@fontsource/dm-sans/500.css";
-import "@fontsource/dm-sans/600.css";
-import "@fontsource/dm-sans/700.css";
-import "@fontsource/manrope/500.css";
-import "@fontsource/manrope/600.css";
+import "@fontsource/dm-sans/latin-400.css";
+import "@fontsource/dm-sans/latin-500.css";
+import "@fontsource/dm-sans/latin-600.css";
+import "@fontsource/dm-sans/latin-700.css";
 import "./styles.css";
 function read(key, fallback, store = localStorage) {
   try {
@@ -78,90 +76,6 @@ function Mark() {
       />
       <circle cx="22" cy="5" r="2" fill="currentColor" />
     </svg>
-  );
-}
-function Status({ ok, children }) {
-  return (
-    <span className={`status ${ok ? "ok" : "pending"}`}>
-      <span />
-      {children}
-    </span>
-  );
-}
-function Select({ label, options, value, onChange, disabled }) {
-  return (
-    <label>
-      {label}
-      <select
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map(([key, text]) => (
-          <option key={key} value={key}>
-            {text}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-function Pipeline({ busy, latest }) {
-  const reduce = useReducedMotion();
-  return (
-    <SpotlightCard
-      className="pipeline"
-      theme="light"
-      intensity={reduce ? 0 : 0.08}
-      borderGlow={0}
-      proximity={0}
-      flare={false}
-      grain={0}
-      style={{ "--spotlight-card-shadow": "none" }}
-    >
-      <div className="pipeline-title">
-        <span>Research protocol</span>
-        <Status ok={latest?.status === "completed"}>
-          {busy
-            ? "Running"
-            : latest?.status === "completed"
-              ? "Last run completed"
-              : latest?.status === "failed"
-                ? "Last run failed"
-                : "Awaiting first run"}
-        </Status>
-      </div>
-      <ol>
-        <li>
-          <Globe2 />
-          <div>
-            <strong>Discover</strong>
-            <span>Gemini + Google Search</span>
-          </div>
-        </li>
-        <li>
-          <ShieldCheck />
-          <div>
-            <strong>Check</strong>
-            <span>Public storefront evidence</span>
-          </div>
-        </li>
-        <li>
-          <Check />
-          <div>
-            <strong>Review</strong>
-            <span>Your decision before outreach</span>
-          </div>
-        </li>
-      </ol>
-      {busy && (
-        <p className="running-copy" role="status">
-          <RefreshCw className="spin" size={14} />
-          Waiting for grounded search and website checks. Counts appear when the
-          server responds.
-        </p>
-      )}
-    </SpotlightCard>
   );
 }
 function RunRecord({ run }) {
@@ -256,7 +170,9 @@ function App() {
     [selected, setSelected] = useState(null),
     [filter, setFilter] = useState("all"),
     [query, setQuery] = useState(""),
-    [briefExpanded, setBriefExpanded] = useState(false);
+    [settingsOpen, setSettingsOpen] = useState(false),
+    [storageCheck, setStorageCheck] = useState(null),
+    [checkingStorage, setCheckingStorage] = useState(false);
   const [localLeads, setLocalLeads, leadsStorageError] = useStored(
       "prospect_v3_leads",
       [],
@@ -280,9 +196,10 @@ function App() {
     [authBusy, setAuthBusy] = useState(false),
     [authError, setAuthError] = useState("");
   const runLock = useRef(false);
+  const accessGeneration = useRef(0);
   const storage = Boolean(health?.storage);
-  const leads = storage ? remoteLeads : localLeads;
-  const runs = storage ? remoteRuns : localRuns;
+  const leads = storage ? (access ? remoteLeads : []) : localLeads;
+  const runs = storage ? (access ? remoteRuns : []) : localRuns;
   const latest = runs[0];
   const configured = Boolean(health?.search && health?.secure);
   const canRun = configured && Boolean(access);
@@ -332,9 +249,11 @@ function App() {
   const refresh = useCallback(
     async ({ preserveError = false } = {}) => {
       if (!access) return;
+      const generation = accessGeneration.current;
       setLoading(true);
       try {
         const out = await send("/api/leads");
+        if (generation !== accessGeneration.current) return;
         setConnected(true);
         if (out.stored) {
           setRemoteLeads(out.leads || []);
@@ -342,10 +261,11 @@ function App() {
         }
         if (!preserveError) setError("");
       } catch (e) {
+        if (generation !== accessGeneration.current) return;
         setConnected(false);
         setError(e.message);
       } finally {
-        setLoading(false);
+        if (generation === accessGeneration.current) setLoading(false);
       }
     },
     [access, send],
@@ -356,7 +276,7 @@ function App() {
   const run = async () => {
     if (runLock.current) return;
     if (!canRun) {
-      setTab("settings");
+      setSettingsOpen(true);
       setNotice(
         "Configure the server and unlock this workspace to start discovery.",
       );
@@ -364,7 +284,6 @@ function App() {
     }
     runLock.current = true;
     setBusy(true);
-    setBriefExpanded(false);
     setError("");
     setNotice("");
     const startedAt = new Date().toISOString(),
@@ -453,6 +372,7 @@ function App() {
       setConnected(true);
       setAccessInput("");
       setNotice("Workspace unlocked for this session.");
+      setSettingsOpen(false);
     } catch (err) {
       setAuthError(err.message);
     } finally {
@@ -461,11 +381,13 @@ function App() {
   };
   const saveLead = async (changes) => {
     const lead = selected;
+    const generation = accessGeneration.current;
     if (storage)
       await send("/api/leads?id=" + encodeURIComponent(lead.id), {
         method: "PATCH",
         body: JSON.stringify(changes),
       });
+    if (generation !== accessGeneration.current) return;
     const setter = storage ? setRemoteLeads : setLocalLeads;
     setter((old) =>
       old.map((x) => (x.domain === lead.domain ? { ...x, ...changes } : x)),
@@ -488,60 +410,87 @@ function App() {
   );
   const claims = runs.flatMap((r) => r.details?.claims || []);
   const approved = leads.filter((l) => l.stage === "approved").length;
+  const lockWorkspace = () => {
+    accessGeneration.current += 1;
+    setLoading(false);
+    setCheckingStorage(false);
+    try {
+      sessionStorage.removeItem("prospect_access");
+    } catch {}
+    setAccess("");
+    setConnected(false);
+    setRemoteLeads([]);
+    setRemoteRuns([]);
+    setSelected(null);
+    setStorageCheck(null);
+    setNotice("Workspace locked.");
+  };
+  const checkStorage = async () => {
+    const generation = accessGeneration.current;
+    setCheckingStorage(true);
+    try {
+      const out = await send("/api/storage");
+      if (generation !== accessGeneration.current) return;
+      setStorageCheck(out);
+    } catch (e) {
+      if (generation !== accessGeneration.current) return;
+      setStorageCheck({ verified: false, error: e.message });
+    } finally {
+      if (generation === accessGeneration.current) setCheckingStorage(false);
+    }
+  };
+  const openSettings = () => {
+    setSettingsOpen(true);
+    refreshStatus();
+  };
+  const reduce = useReducedMotion();
   return (
     <>
       <a className="skip-link" href="#workspace">
         Skip to workspace
       </a>
       <header className="topbar">
-        <a className="brand" href="#workspace" aria-label="Prospect workspace">
-          <Mark />
-          <span>
-            prospect<span className="brand-period">.</span>
-          </span>
-        </a>
-        <span className="workspace-name">
-          MyDigital-Metrics <span>/</span> Research workspace
-        </span>
-        <div className="topbar-right">
-          <Status ok={configured}>
-            {health === null
-              ? "Checking configuration"
-              : configured
-                ? "Gemini configured"
-                : "Setup required"}
-          </Status>
-          <button
-            className="icon-button"
-            onClick={() => {
-              setTab("settings");
-              refreshStatus();
-            }}
-            aria-label="Open workspace settings"
+        <div className="topbar-inner">
+          <a
+            className="brand"
+            href="#workspace"
+            aria-label="Prospect workspace"
           >
-            <Settings2 size={18} />
-          </button>
-          <span
-            className="workspace-avatar"
-            title="MyDigital-Metrics workspace"
-          >
-            MD
-          </span>
+            <Mark />
+            <span>
+              prospect<span className="brand-period">.</span>
+            </span>
+          </a>
+          <span className="workspace-name">MyDigital-Metrics</span>
+          <div className="topbar-right">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openSettings}
+              aria-label="Open workspace settings"
+            >
+              <Settings2 size={18} />
+            </Button>
+            <WorkspaceMenu
+              onSettings={openSettings}
+              onLock={lockWorkspace}
+              unlocked={Boolean(access && connected)}
+              busy={busy}
+            />
+          </div>
         </div>
       </header>
       <main id="workspace" className="workspace">
         <div className="page-heading">
           <div>
-            <h1>Prospect research</h1>
+            <h1>Find your next conversation.</h1>
             <p>
-              Discover businesses. Check the evidence. Start a better
-              conversation.
+              Discover businesses worth knowing. Review the evidence before
+              reaching out.
             </p>
           </div>
-          <span className="storage-caption">
-            <Database size={14} />
-            {storage ? "Shared workspace" : "Browser pilot"}
-            <span className="muted">· {leads.length} prospects</span>
+          <span className="workspace-mode">
+            {storage ? "Shared workspace" : "Personal workspace"}
           </span>
         </div>
         {health?.testFixture && (
@@ -549,61 +498,36 @@ function App() {
             AUTOMATED QA · SYNTHETIC .test FIXTURES · NOT LIVE SOURCING
           </p>
         )}
-        <div className="workbench">
-          <aside className={`brief-panel ${briefExpanded ? "expanded" : ""}`}>
-            <div className="brief-heading">
-              <span className="brief-mark">
-                <SlidersHorizontal size={18} />
-              </span>
-              <h2>Your research brief</h2>
-              <button
-                className="brief-toggle text-button"
-                aria-expanded={briefExpanded}
-                aria-controls="brief-fields"
-                onClick={() => setBriefExpanded((v) => !v)}
-              >
-                {briefExpanded ? "Done" : "Edit"}
-              </button>
-            </div>
-            <p className="brief-summary">
-              {labelFor(SECTORS, sector)} · {labelFor(REGIONS, region)}
-            </p>
-            <p className="brief-intro">
-              Define the businesses worth a closer look. Your brief stays ready
-              for the next run.
-            </p>
-            <div className="brief-fields" id="brief-fields">
-              <Select
-                label="Business segment"
-                options={SECTORS}
-                value={sector}
-                onChange={setSector}
-                disabled={busy}
-              />
-              <Select
-                label="Target market"
-                options={REGIONS}
-                value={region}
-                onChange={setRegion}
-                disabled={busy}
-              />
-            </div>
-            <div className="brief-scope">
-              <span>Looking for</span>
-              <p>
-                Independent, direct-to-consumer brands with a public online
-                storefront.
-              </p>
-              <span>Checking for</span>
-              <p>
-                Commerce infrastructure, product links and public contact
-                pathways.
-              </p>
-            </div>
-            <button
-              className="button primary run-button"
-              disabled={busy || health === null}
+        <SpotlightCard
+          className="research-command"
+          theme="light"
+          intensity={reduce ? 0 : 0.05}
+          borderGlow={0}
+          proximity={0}
+          flare={false}
+          grain={0}
+          style={{ "--spotlight-card-shadow": "none" }}
+        >
+          <div className="research-controls">
+            <SelectField
+              label="Business segment"
+              options={SECTORS}
+              value={sector}
+              onChange={setSector}
+              disabled={busy}
+            />
+            <SelectField
+              label="Target market"
+              options={REGIONS}
+              value={region}
+              onChange={setRegion}
+              disabled={busy}
+            />
+            <Button
+              variant="primary"
+              className="run-button"
               onClick={run}
+              disabled={busy || health === null}
             >
               {busy ? (
                 <RefreshCw size={17} className="spin" />
@@ -611,424 +535,249 @@ function App() {
                 <Search size={17} />
               )}
               <span>{busy ? "Researching…" : "Find prospects"}</span>
-              {!busy && <ArrowRight size={16} />}
-            </button>
-            <p className="brief-footnote">
+              <ArrowRight size={17} />
+            </Button>
+          </div>
+          <div className="research-context">
+            <span>
               {busy
-                ? "Search is running. Keep this page open."
-                : canRun
-                  ? "One grounded search. Independently checked websites."
-                  : "Connect Gemini and unlock the workspace to begin."}
-            </p>
-            <div className="schedule-summary">
-              <Clock3 size={16} />
-              <div>
-                <strong>
-                  {health?.schedule
-                    ? "Daily schedule configured"
-                    : "Run on your terms"}
-                </strong>
-                <p>
-                  {health?.schedule
-                    ? "08:00 UTC · uses the last manual brief. Verify your Vercel scheduler."
-                    : "Manual discovery is available first. Add shared storage to enable daily research."}
-                </p>
-                <button
-                  className="text-button"
-                  onClick={() => setTab("settings")}
-                >
-                  {health?.schedule
-                    ? "Check configuration"
-                    : "Scheduling setup"}
-                  <ArrowUpRight size={14} />
-                </button>
-              </div>
+                ? "Searching and checking public websites. Keep this page open."
+                : "Independent ecommerce brands · Public storefront checks · Human review"}
+            </span>
+            <span>
+              {latest
+                ? `Last run ${dateLabel(latest.started_at)}`
+                : "Ready for your first search"}
+            </span>
+          </div>
+        </SpotlightCard>
+        <section className="research-area" aria-label="Research workspace">
+          <Tabs value={tab} onValueChange={setTab}>
+            <div className="output-toolbar">
+              <TabsList aria-label="Workspace views">
+                <TabsTrigger value="shortlist">
+                  Shortlist <span className="tab-count">{leads.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="runs">
+                  Run log{" "}
+                  {runs.length > 0 && (
+                    <span className="tab-count">{runs.length}</span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              <span className="review-count">
+                {approved} approved for contact
+              </span>
             </div>
-          </aside>
-          <section className="research-area" aria-label="Research workspace">
-            <Pipeline busy={busy} latest={latest} />
-            <Tabs value={tab} onValueChange={setTab}>
-              <div className="output-toolbar">
-                <TabsList aria-label="Workspace views">
-                  <TabsTrigger value="shortlist">
-                    Shortlist <span className="tab-count">{leads.length}</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="runs">
-                    Run log{" "}
-                    {runs.length > 0 && (
-                      <span className="tab-count">{runs.length}</span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="settings">Connections</TabsTrigger>
-                </TabsList>
-                <span className="review-count">{approved} approved</span>
-              </div>
-              {(error || notice) && (
-                <div
-                  className={error ? "feedback error" : "feedback"}
-                  role={error ? "alert" : "status"}
+            {(error || notice) && (
+              <div
+                className={error ? "feedback error" : "feedback"}
+                role={error ? "alert" : "status"}
+              >
+                <span>
+                  {error ? <AlertCircle size={17} /> : <Check size={17} />}
+                </span>
+                <p>{error || notice}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Dismiss message"
+                  onClick={() => {
+                    setError("");
+                    setNotice("");
+                  }}
                 >
-                  <span>
-                    {error ? <AlertCircle size={17} /> : <Check size={17} />}
-                  </span>
-                  <p>{error || notice}</p>
-                  <button
-                    className="icon-button"
-                    aria-label="Dismiss message"
-                    onClick={() => {
-                      setError("");
-                      setNotice("");
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
-              {(leadsStorageError || runsStorageError) && !storage && (
-                <p className="feedback error" role="alert">
-                  Browser storage is unavailable or full. Changes remain in
-                  memory only; export your shortlist before closing.
-                </p>
-              )}
-              <TabsContent value="shortlist">
-                <div className="list-tools">
-                  <div className="filter-group" aria-label="Filter prospects">
-                    {[
-                      ["all", "All"],
-                      ["new", "To review"],
-                      ["shopify", "Shopify"],
-                      ["approved", "Approved"],
-                    ].map(([key, text]) => (
-                      <button
-                        key={key}
-                        className={filter === key ? "filter active" : "filter"}
-                        aria-pressed={filter === key}
-                        onClick={() => setFilter(key)}
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className="button plain export-button"
-                    disabled={!visible.length}
-                    onClick={() => exportLeads(visible)}
-                  >
-                    <Download size={15} />
-                    Export {visible.length > 0 ? `(${visible.length})` : ""}
-                  </button>
-                </div>
-                {leads.length > 0 && (
-                  <label className="search-field">
-                    <Search size={16} />
-                    <input
-                      type="search"
-                      aria-label="Search company or domain"
-                      value={query}
-                      placeholder="Search company or domain"
-                      onChange={(e) => setQuery(e.target.value)}
-                    />
-                  </label>
-                )}
-                <div className="prospect-list" aria-busy={loading || busy}>
-                  <div className="list-columns">
-                    <span>Company / website</span>
-                    <span>Observed signals</span>
-                    <span>Technical fit</span>
-                    <span>Review</span>
-                  </div>
-                  {loading && !leads.length ? (
-                    <div className="empty-state">
-                      <p role="status">Loading workspace prospects…</p>
-                    </div>
-                  ) : !leads.length ? (
-                    <div className="empty-state">
-                      <div className="empty-index" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <Search size={23} />
-                      </div>
-                      <h2>
-                        Your next conversation
-                        <br />
-                        starts with a search.
-                      </h2>
-                      <p>
-                        Run your brief to find real businesses. Only websites
-                        that pass the public storefront checks reach this
-                        shortlist.
-                      </p>
-                      <button
-                        className="text-button"
-                        onClick={run}
-                        disabled={busy}
-                      >
-                        {configured
-                          ? "Run your research brief"
-                          : "Connect your research engine"}
-                        <ArrowRight size={16} />
-                      </button>
-                      <span className="empty-note">
-                        No sample leads. Your research belongs here.
-                      </span>
-                    </div>
-                  ) : visible.length ? (
-                    visible.map((lead) => (
-                      <button
-                        className="prospect-row"
-                        key={lead.id || lead.domain}
-                        onClick={() => setSelected(lead)}
-                        aria-label={`Review ${lead.name || lead.domain}`}
-                      >
-                        <span className="company-cell">
-                          <span className="row-letter">
-                            {(lead.name || lead.domain).slice(0, 1)}
-                          </span>
-                          <span>
-                            <strong>{lead.name || lead.domain}</strong>
-                            <small>{lead.domain}</small>
-                          </span>
-                        </span>
-                        <span className="signals-cell">
-                          <span
-                            className={
-                              lead.shopify ? "signal positive" : "signal"
-                            }
-                          >
-                            <span />
-                            {lead.shopify
-                              ? "Shopify marker"
-                              : "Storefront checked"}
-                          </span>
-                          <small>{lead.reason}</small>
-                        </span>
-                        <span className="score-cell">
-                          {lead.score}
-                          <small>/100</small>
-                        </span>
-                        <span className="stage-cell">
-                          {labelFor(STAGES, lead.stage)}
-                          <ArrowUpRight size={15} />
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="empty-filter">
-                      <p>No prospects match this view.</p>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setFilter("all");
-                          setQuery("");
-                        }}
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="list-footer">
-                  <span>
-                    <ShieldCheck size={14} />
-                    Evidence supports review. It does not prove buying intent.
-                  </span>
-                  {storage && (
-                    <button
-                      className="text-button"
-                      disabled={loading}
-                      onClick={refresh}
-                    >
-                      Refresh
-                    </button>
-                  )}
-                </div>
-              </TabsContent>
-              <TabsContent value="runs">
-                <div className="view-heading">
-                  <div>
-                    <h2>Research run log</h2>
-                    <p>Queries, sources and every candidate decision.</p>
-                  </div>
-                  {storage && (
-                    <button
-                      className="button plain"
-                      disabled={loading}
-                      onClick={refresh}
-                    >
-                      <RefreshCw size={15} />
-                      Refresh
-                    </button>
-                  )}
-                </div>
-                {busy && (
-                  <p className="feedback" role="status">
-                    Research in progress. Results will appear when the server
-                    responds; no candidate counts are estimated.
-                  </p>
-                )}
-                {runs.length ? (
-                  runs.map((r) => <RunRecord key={r.id} run={r} />)
-                ) : (
-                  <div className="empty-filter">
-                    <Clock3 size={24} />
-                    <h3>No research runs yet</h3>
-                    <p>
-                      Run your brief to build an auditable research history.
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-              <TabsContent value="settings">
-                <div className="view-heading">
-                  <div>
-                    <h2>Research connections</h2>
-                    <p>
-                      Configuration presence is shown below. A successful run
-                      verifies provider access.
-                    </p>
-                  </div>
-                  <button className="button plain" onClick={refreshStatus}>
-                    <RefreshCw size={15} />
-                    Recheck
-                  </button>
-                </div>
-                <div className="connection-list">
+                  <X size={16} />
+                </Button>
+              </div>
+            )}
+            {(leadsStorageError || runsStorageError) && !storage && (
+              <p className="feedback error" role="alert">
+                Browser storage is unavailable or full. Export your shortlist
+                before closing.
+              </p>
+            )}
+            <TabsContent value="shortlist">
+              <div className="list-tools">
+                <div className="filter-group" aria-label="Filter prospects">
                   {[
-                    {
-                      title: "Gemini + Google Search",
-                      key: "GEMINI_API_KEY",
-                      ok: health?.search,
-                      description:
-                        "Required for live discovery. Server only; never enter the API key here.",
-                    },
-                    {
-                      title: "Workspace protection",
-                      key: "APP_ACCESS_KEY",
-                      ok: health?.secure,
-                      description: "Required to protect the research endpoint.",
-                    },
-                    {
-                      title: "Shared storage",
-                      key: "SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY",
-                      ok: health?.storage,
-                      description:
-                        "Optional for manual runs. Apply schema.sql to enable durable records.",
-                    },
-                    {
-                      title: "Daily automation",
-                      key: "CRON_SECRET",
-                      ok: health?.schedule,
-                      description:
-                        "Requires shared storage and an active Vercel cron deployment.",
-                    },
-                  ].map((c) => (
-                    <div className="connection" key={c.key}>
-                      <span
-                        className={
-                          c.ok ? "connection-check present" : "connection-check"
-                        }
-                      >
-                        {c.ok ? <Check size={17} /> : <span />}
-                      </span>
-                      <div>
-                        <h3>{c.title}</h3>
-                        <p>{c.description}</p>
-                        <code>{c.key}</code>
-                      </div>
-                      <span className="connection-state">
-                        {c.ok ? "Configured" : "Not configured"}
-                      </span>
-                    </div>
+                    ["all", "All"],
+                    ["new", "To review"],
+                    ["shopify", "Shopify"],
+                    ["approved", "Approved"],
+                  ].map(([key, text]) => (
+                    <Button
+                      variant="ghost"
+                      key={key}
+                      className={filter === key ? "filter active" : "filter"}
+                      aria-pressed={filter === key}
+                      onClick={() => setFilter(key)}
+                    >
+                      {text}
+                    </Button>
                   ))}
                 </div>
-                {health?.missing?.length > 0 && (
-                  <div className="config-help">
-                    <h3>Set up on the server</h3>
-                    <p>
-                      Add the missing variables to Vercel preview settings or an
-                      ignored <code>lead-engine/.env.local</code>, then restart
-                      the dev server or redeploy. Keep credentials out of source
-                      control.
-                    </p>
-                    <p className="small">
-                      Missing: {health.missing.join(", ")}
-                    </p>
+                <Button
+                  variant="ghost"
+                  className="button plain export-button"
+                  disabled={!visible.length}
+                  onClick={() => exportLeads(visible)}
+                >
+                  <Download size={15} />
+                  Export {visible.length > 0 ? `(${visible.length})` : ""}
+                </Button>
+              </div>
+              {leads.length > 0 && (
+                <label className="search-field">
+                  <Search size={16} />
+                  <Input
+                    type="search"
+                    aria-label="Search company or domain"
+                    value={query}
+                    placeholder="Search company or domain"
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+              )}
+              <div className="prospect-list" aria-busy={loading || busy}>
+                <div className="list-columns">
+                  <span>Company / website</span>
+                  <span>Observed signals</span>
+                  <span>Technical fit</span>
+                  <span>Review</span>
+                </div>
+                {loading && !leads.length ? (
+                  <div className="empty-state">
+                    <p role="status">Loading workspace prospects…</p>
                   </div>
-                )}
-                <form className="unlock-form" onSubmit={unlock}>
-                  <div>
-                    <h3>
-                      {connected
-                        ? "Workspace unlocked"
-                        : "Unlock this workspace"}
-                    </h3>
+                ) : !leads.length ? (
+                  <div className="empty-state">
+                    <h2>No prospects yet.</h2>
                     <p>
-                      The workspace access key stays in this browser tab’s
-                      session. Your Gemini key stays on the server.
+                      Choose a segment and market above, then find prospects. We
+                      check public storefronts before adding businesses here.
                     </p>
+
+                    <span className="empty-note">
+                      Your research will appear here.
+                    </span>
                   </div>
-                  {access && connected ? (
-                    <button
-                      className="button secondary"
-                      type="button"
+                ) : visible.length ? (
+                  visible.map((lead) => (
+                    <Button
+                      variant="ghost"
+                      className="prospect-row"
+                      key={lead.id || lead.domain}
+                      onClick={() => setSelected(lead)}
+                      aria-label={`Review ${lead.name || lead.domain}`}
+                    >
+                      <span className="company-cell">
+                        <span className="row-letter">
+                          {(lead.name || lead.domain).slice(0, 1)}
+                        </span>
+                        <span>
+                          <strong>{lead.name || lead.domain}</strong>
+                          <small>{lead.domain}</small>
+                        </span>
+                      </span>
+                      <span className="signals-cell">
+                        <span
+                          className={
+                            lead.shopify ? "signal positive" : "signal"
+                          }
+                        >
+                          <span />
+                          {lead.shopify
+                            ? "Shopify marker"
+                            : "Storefront checked"}
+                        </span>
+                        <small>{lead.reason}</small>
+                      </span>
+                      <span className="score-cell">
+                        {lead.score}
+                        <small>/100</small>
+                      </span>
+                      <span className="stage-cell">
+                        {labelFor(STAGES, lead.stage)}
+                        <ArrowUpRight size={15} />
+                      </span>
+                    </Button>
+                  ))
+                ) : (
+                  <div className="empty-filter">
+                    <p>No prospects match this view.</p>
+                    <Button
+                      variant="ghost"
+                      className="text-button"
                       onClick={() => {
-                        try {
-                          sessionStorage.removeItem("prospect_access");
-                        } catch {}
-                        setAccess("");
-                        setConnected(false);
-                        setRemoteLeads([]);
-                        setRemoteRuns([]);
-                        setSelected(null);
+                        setFilter("all");
+                        setQuery("");
                       }}
                     >
-                      Lock workspace
-                    </button>
-                  ) : (
-                    <>
-                      <label>
-                        Workspace access key
-                        <input
-                          type="password"
-                          autoComplete="current-password"
-                          required
-                          value={accessInput}
-                          onChange={(e) => setAccessInput(e.target.value)}
-                          aria-invalid={Boolean(authError)}
-                          aria-describedby={
-                            authError ? "unlock-error" : undefined
-                          }
-                        />
-                      </label>
-                      {authError && (
-                        <p
-                          id="unlock-error"
-                          role="alert"
-                          className="error-text"
-                        >
-                          {authError}
-                        </p>
-                      )}
-                      <button
-                        className="button primary"
-                        disabled={authBusy || !health?.secure}
-                      >
-                        <KeyRound size={16} />
-                        {authBusy ? "Checking…" : "Unlock workspace"}
-                      </button>
-                    </>
-                  )}
-                </form>
-              </TabsContent>
-            </Tabs>
-          </section>
-        </div>
+                      Clear filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="list-footer">
+                <span>
+                  <ShieldCheck size={14} />
+                  Evidence supports review. It does not prove buying intent.
+                </span>
+                {storage && (
+                  <Button
+                    variant="ghost"
+                    className="text-button"
+                    disabled={loading}
+                    onClick={refresh}
+                  >
+                    Refresh
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="runs">
+              <div className="view-heading">
+                <div>
+                  <h2>Research run log</h2>
+                  <p>Queries, sources and every candidate decision.</p>
+                </div>
+                {storage && (
+                  <Button
+                    variant="ghost"
+                    className="button plain"
+                    disabled={loading}
+                    onClick={refresh}
+                  >
+                    <RefreshCw size={15} />
+                    Refresh
+                  </Button>
+                )}
+              </div>
+              {busy && (
+                <p className="feedback" role="status">
+                  Research in progress. Results will appear when the server
+                  responds; no candidate counts are estimated.
+                </p>
+              )}
+              {runs.length ? (
+                runs.map((r) => <RunRecord key={r.id} run={r} />)
+              ) : (
+                <div className="empty-filter">
+                  <Clock3 size={24} />
+                  <h3>No research runs yet</h3>
+                  <p>Run your brief to build an auditable research history.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </section>
         <footer className="workspace-footer">
           <span>Prospect for MyDigital-Metrics</span>
           <span>
-            {storage ? "Shared records" : "Stored in this browser"} ·
-            Human-reviewed outreach
+            {storage ? "Shared records" : "Saved on this device"} · Outreach
+            stays in your hands
           </span>
           <a href="/licenses/" target="_blank" rel="noreferrer">
             Component licenses
@@ -1036,6 +785,151 @@ function App() {
           </a>
         </footer>
       </main>
+      <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <section className="settings-section">
+          <h2>Workspace access</h2>
+          {access && connected ? (
+            <div className="access-summary">
+              <ShieldCheck size={19} />
+              <div>
+                <strong>Workspace unlocked</strong>
+                <p>
+                  You can run research and review prospects. Lock this session
+                  from the workspace menu.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form className="unlock-form" onSubmit={unlock}>
+              <p>
+                Enter your workspace key to start research. It stays in this
+                browser tab; provider keys stay on the server.
+              </p>
+              <label>
+                Workspace access key
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={accessInput}
+                  onChange={(e) => setAccessInput(e.target.value)}
+                  aria-invalid={Boolean(authError)}
+                  aria-describedby={authError ? "unlock-error" : undefined}
+                />
+              </label>
+              {authError && (
+                <p id="unlock-error" role="alert" className="error-text">
+                  {authError}
+                </p>
+              )}
+              {health && !health.secure && (
+                <p className="config-help">
+                  Workspace protection needs APP_ACCESS_KEY in the Vercel
+                  project’s environment settings. Add it and redeploy to enable
+                  unlocking.
+                </p>
+              )}
+              <div className="form-actions">
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={authBusy || !health?.secure}
+                >
+                  <KeyRound size={16} />
+                  {authBusy ? "Checking…" : "Unlock workspace"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </section>
+        <section className="settings-section">
+          <div className="settings-section-heading">
+            <h2>Shared storage</h2>
+            <span className="settings-state">
+              {storageCheck?.verified
+                ? "Verified"
+                : storage
+                  ? "Connection added"
+                  : "Not connected"}
+            </span>
+          </div>
+          <p>
+            {storage
+              ? "Supabase keeps prospects, reviews and run history available across devices. Verify the database before relying on shared records."
+              : "Research currently stays on this device. Connect Supabase to keep prospects and review history across devices."}
+          </p>
+          <div className="settings-inline-action">
+            <span>
+              {storage
+                ? "Server connection is configured."
+                : "No database credentials are entered in this app."}
+            </span>
+            <Button
+              variant="secondary"
+              size="small"
+              disabled={!access || !storage || checkingStorage}
+              onClick={checkStorage}
+            >
+              {checkingStorage ? "Checking…" : "Verify storage"}
+            </Button>
+          </div>
+          {storageCheck && (
+            <p
+              className={
+                storageCheck.verified ? "verification-result" : "error-text"
+              }
+              role="status"
+            >
+              {storageCheck.verified
+                ? "Verified access to prospects, run history and saved search settings."
+                : storageCheck.error || "Shared storage is not connected."}
+            </p>
+          )}
+        </section>
+        <details className="technical-settings">
+          <summary>
+            Service details <ChevronRight size={16} />
+          </summary>
+          <div className="technical-settings-content">
+            <p className="small muted">
+              Configuration is shown here for the workspace owner. A successful
+              search verifies provider access.
+            </p>
+            <div className="service-row">
+              <span>Discovery provider</span>
+              <strong>
+                {health?.search ? "Configured" : "Not configured"}
+              </strong>
+            </div>
+            <div className="service-row">
+              <span>Workspace protection</span>
+              <strong>
+                {health?.secure ? "Configured" : "Not configured"}
+              </strong>
+            </div>
+            <div className="service-row">
+              <span>Daily scheduling</span>
+              <strong>{health?.schedule ? "Configured" : "Not enabled"}</strong>
+            </div>
+            {health?.missing?.length > 0 && (
+              <p className="config-help">
+                Missing server configuration: {health.missing.join(", ")}.
+                Update the Vercel environment settings and redeploy.
+              </p>
+            )}
+            <p className="small muted">
+              Scheduling requires a verified Supabase connection and an active
+              scheduler. It is optional for manual searches.
+            </p>
+            <div className="form-actions">
+              <Button variant="secondary" size="small" onClick={refreshStatus}>
+                <RefreshCw size={14} />
+                Recheck services
+              </Button>
+            </div>
+          </div>
+        </details>
+      </SettingsPanel>
       {selected && (
         <Inspector
           key={selected.id || selected.domain}
@@ -1048,6 +942,7 @@ function App() {
     </>
   );
 }
+
 createRoot(document.getElementById("root")).render(
   <MotionConfig reducedMotion="user">
     <App />

@@ -203,3 +203,45 @@ test("scheduled settings and discovery inherit the same request deadline", async
       : (process.env.CRON_SECRET = old.cron);
   }
 });
+test("protected Supabase verification checks all required tables and distinguishes missing or broken storage", async () => {
+  const db = require("../api/_lib/db.cjs");
+  const original = { connected: db.connected, request: db.request };
+  const old = process.env.APP_ACCESS_KEY;
+  process.env.APP_ACCESS_KEY = "synthetic-storage-check";
+  const handler = (await import("../api/storage.js")).default;
+  const headers = { "x-prospect-key": process.env.APP_ACCESS_KEY };
+  try {
+    let res = response();
+    await handler({ method: "GET", headers: {} }, res);
+    assert.equal(res.statusCode, 401);
+    db.connected = () => false;
+    res = response();
+    await handler({ method: "GET", headers }, res);
+    assert.equal(res.data.verified, false);
+    assert.equal(res.data.mode, "browser");
+    const tables = [];
+    db.connected = () => true;
+    db.request = async (table, options) => {
+      tables.push(table);
+      assert.equal(options.query, "select=id&limit=1");
+      return [];
+    };
+    res = response();
+    await handler({ method: "GET", headers }, res);
+    assert.equal(res.data.verified, true);
+    assert.deepEqual(tables.sort(), ["app_settings", "lead_runs", "leads"]);
+    db.request = async () => {
+      throw Error("synthetic schema error");
+    };
+    res = response();
+    await handler({ method: "GET", headers }, res);
+    assert.equal(res.statusCode, 503);
+    assert.equal(res.data.verified, false);
+    assert.match(res.data.error, /schema.sql/);
+  } finally {
+    Object.assign(db, original);
+    old === undefined
+      ? delete process.env.APP_ACCESS_KEY
+      : (process.env.APP_ACCESS_KEY = old);
+  }
+});
